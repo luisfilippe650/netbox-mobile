@@ -1,20 +1,22 @@
 import { PageShell } from '../../components/PageShell/PageShell'
+import type { DeviceSummary } from './Devices'
 import './object-info.css'
 
 type ObjectInfoProps = {
   onBack: () => void
+  device?: DeviceSummary
 }
 
-const fields = [
-  { label: 'Nome', value: 'Servidor principal' },
-  { label: 'Asset tag', value: 'AST-001' },
-  { label: 'Status', value: 'Ativo' },
-  { label: 'Comentário', value: 'Visual limpo para tela mobile' },
-]
+export default function ObjectInfo({ onBack, device }: ObjectInfoProps) {
+  const fields = [
+    { label: 'Nome', value: device?.name ?? 'Servidor principal' },
+    { label: 'ID', value: device?.id ?? '1001' },
+    { label: 'Status', value: 'Ativo' },
+    { label: 'Descrição', value: device?.meta ?? 'Visual limpo para tela mobile' },
+  ]
 
-export default function ObjectInfo({ onBack }: ObjectInfoProps) {
   return (
-    <PageShell eyebrow="Detalhe" title="Informações do objeto" subtitle="Primeira versão focada só no visual.">
+    <PageShell className="object-info-page" eyebrow="Dispositivo" title="Informações do dispositivo" subtitle="Confira os dados do equipamento selecionado.">
       <section className="page-card object-info__card">
         <div className="page-grid object-info__grid">
           {fields.map((field) => (

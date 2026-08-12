@@ -3,8 +3,11 @@ import { createRoot } from 'react-dom/client'
 import Login from './pages/login/Login'
 import Home from './pages/home/Home'
 import ScannerPage from './pages/scanner/Scanner'
-import ObjectInfoPage from './pages/object-info/ObjectInfo'
-import ObjectListPage from './pages/object-list/ObjectList'
+import ObjectInfoPage from './pages/devices/ObjectInfo'
+import DevicesPage from './pages/devices/Devices'
+import type { DeviceSummary } from './pages/devices/Devices'
+import AddDevicePage from './pages/devices/AddDevice'
+import AddDeviceTypePage from './pages/devices/AddDeviceType'
 import RackInfoPage from './pages/rack-info/RackInfo'
 import RowInfoPage from './pages/row-info/RowInfo'
 import LocationInfoPage from './pages/location-info/LocationInfo'
@@ -15,7 +18,9 @@ type Page =
   | 'home'
   | 'scanner'
   | 'object-info'
-  | 'object-list'
+  | 'devices'
+  | 'add-device'
+  | 'add-device-type'
   | 'device'
   | 'rack-info'
   | 'row-info'
@@ -23,6 +28,7 @@ type Page =
 
 function App() {
   const [page, setPage] = useState<Page>('login')
+  const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(null)
 
   if (page === 'login') {
     return <Login onLogin={() => setPage('home')} />
@@ -42,11 +48,19 @@ function App() {
   }
 
   if (page === 'object-info') {
-    return <ObjectInfoPage onBack={() => setPage('home')} />
+    return <ObjectInfoPage device={selectedDevice ?? undefined} onBack={() => setPage('devices')} />
   }
 
-  if (page === 'object-list' || page === 'device') {
-    return <ObjectListPage onBack={() => setPage('home')} />
+  if (page === 'devices' || page === 'device') {
+    return <DevicesPage onBack={() => setPage('home')} onAdd={() => setPage('add-device')} onSelect={(device) => { setSelectedDevice(device); setPage('object-info') }} />
+  }
+
+  if (page === 'add-device') {
+    return <AddDevicePage onBack={() => setPage('devices')} />
+  }
+
+  if (page === 'add-device-type') {
+    return <AddDeviceTypePage onBack={() => setPage('devices')} />
   }
 
   if (page === 'rack-info') {

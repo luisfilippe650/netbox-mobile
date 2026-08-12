@@ -16,7 +16,9 @@ type HomeProps = {
     page:
       | "scanner"
       | "object-info"
-      | "object-list"
+      | "devices"
+      | "add-device"
+      | "add-device-type"
       | "device"
       | "rack-info"
       | "row-info"
@@ -34,6 +36,9 @@ type HomeAction = {
 type HomePage =
   | "scanner"
   | "object-info"
+  | "devices"
+  | "add-device"
+  | "add-device-type"
   | "device"
   | "rack-info"
   | "organizacao"
@@ -46,6 +51,11 @@ type ActionOption = {
   page?: NavigableHomePage;
   tone?: "success" | "danger";
 };
+
+type DeleteKind = "device" | "device-type";
+
+const devicesForDeletion = ["Servidor principal", "Switch core", "UPS"] as const;
+const deviceTypesForDeletion = ["Servidor", "Switch", "Roteador", "Storage"] as const;
 
 const actions: readonly HomeAction[] = [
   {
@@ -75,9 +85,9 @@ const actions: readonly HomeAction[] = [
 ] as const;
 
 const deviceOptions: readonly ActionOption[] = [
-  { label: "Visualizar dispositivos", page: "device" },
-  { label: "Adicionar dispositivos", tone: "success" },
-  { label: "Adicionar tipo de dispositivo", tone: "success" },
+  { label: "Visualizar dispositivos", page: "devices" },
+  { label: "Adicionar dispositivos", page: "add-device", tone: "success" },
+  { label: "Adicionar tipo de dispositivo", page: "add-device-type", tone: "success" },
   { label: "Deletar dispositivos", tone: "danger" },
   { label: "Deletar tipos de dispositivos", tone: "danger" },
 ];
@@ -101,6 +111,10 @@ const organizationOptions: readonly ActionOption[] = [
 export default function Home({ onLogout, onOpenPage }: HomeProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<HomeAction | null>(null);
+  const [deleteKind, setDeleteKind] = useState<DeleteKind | null>(null);
+  const [deleteSelection, setDeleteSelection] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState("");
 
   const openActionOptions = (action: HomeAction) => {
     setSelectedAction(action);
@@ -108,6 +122,22 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
 
   const closeActionOptions = () => {
     setSelectedAction(null);
+    setDeleteKind(null);
+    setDeleteSelection("");
+    setConfirmDelete(false);
+    setDeleteMessage("");
+  };
+
+  const openDeleteSelection = (kind: DeleteKind) => {
+    setDeleteKind(kind);
+    setDeleteSelection("");
+    setConfirmDelete(false);
+    setDeleteMessage("");
+  };
+
+  const finishDeletion = () => {
+    setConfirmDelete(false);
+    setDeleteMessage(`${deleteKind === "device" ? "Dispositivo" : "Tipo de dispositivo"} excluído com sucesso.`);
   };
 
   return (
@@ -250,7 +280,42 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
             </span>
             <h2 id="home-action-title">{selectedAction.title}</h2>
             <p>{selectedAction.text}</p>
-            <div className="home__modal-actions">
+            {deleteKind ? (
+              <div className="home__delete-flow">
+                {deleteMessage ? (
+                  <div className="home__delete-message" role="status">
+                    <span aria-hidden="true">✓</span>
+                    <strong>{deleteMessage}</strong>
+                    <button type="button" onClick={closeActionOptions}>OK</button>
+                  </div>
+                ) : confirmDelete ? (
+                  <div className="home__delete-confirmation" role="alertdialog" aria-labelledby="home-delete-title">
+                    <strong id="home-delete-title">Tem certeza que deseja excluir?</strong>
+                    <span>{deleteSelection}</span>
+                    <div>
+                      <button type="button" onClick={() => setConfirmDelete(false)}>Cancelar</button>
+                      <button className="home__delete-confirm" type="button" onClick={finishDeletion}>Excluir</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <label className="home__delete-select">
+                      <span>{deleteKind === "device" ? "Selecione o dispositivo" : "Selecione o tipo de dispositivo"}</span>
+                      <select value={deleteSelection} onChange={(event) => setDeleteSelection(event.target.value)}>
+                        <option value="">Selecione uma opção</option>
+                        {(deleteKind === "device" ? devicesForDeletion : deviceTypesForDeletion).map((item) => (
+                          <option key={item} value={item}>{item}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="home__delete-controls">
+                      <button type="button" onClick={() => setDeleteKind(null)}>Voltar</button>
+                      <button type="button" disabled={!deleteSelection} onClick={() => setConfirmDelete(true)}>OK</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : <div className="home__modal-actions">
               {selectedAction.key === "device" ||
               selectedAction.key === "rack-info" ||
               selectedAction.key === "organizacao" ? (
@@ -265,6 +330,14 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
                     key={option.label}
                     type="button"
                     onClick={() => {
+                      if (option.label === "Deletar dispositivos") {
+                        openDeleteSelection("device");
+                        return;
+                      }
+                      if (option.label === "Deletar tipos de dispositivos") {
+                        openDeleteSelection("device-type");
+                        return;
+                      }
                       if (option.page) onOpenPage(option.page);
                       closeActionOptions();
                     }}
@@ -286,7 +359,7 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
                   Abrir {selectedAction.title}
                 </button>
               )}
-            </div>
+            </div>}
           </section>
         </div>
       ) : null}

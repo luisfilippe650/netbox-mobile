@@ -716,3 +716,90 @@
   outline: 3px solid rgba(11, 86, 197, 0.25);
   outline-offset: 2px;
 }
+
+.home__delete-flow {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 360px);
+  margin: 0 auto;
+}
+
+.home__delete-select {
+  display: grid;
+  gap: 7px;
+  text-align: left;
+}
+
+.home__delete-select span {
+  color: var(--font-color);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.home__delete-select select {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 12px;
+  border: 1px solid #d9deea;
+  border-radius: 12px;
+  outline: 0;
+  background: #fbfcfe;
+  color: var(--font-color);
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.home__delete-select select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(11, 86, 197, 0.12);
+}
+
+.home__delete-controls,
+.home__delete-confirmation > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.home__delete-controls button,
+.home__delete-confirmation button,
+.home__delete-message button {
+  min-height: 48px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface-color);
+  color: var(--primary-color);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.home__delete-controls button:last-child,
+.home__delete-message button {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: white;
+}
+
+.home__delete-controls button:disabled {
+  border-color: var(--border-color);
+  background: var(--neutral-background-color);
+  color: var(--muted-font-color);
+  cursor: not-allowed;
+}
+
+.home__delete-confirmation,
+.home__delete-message {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #fecaca;
+  border-radius: 16px;
+  background: #fffafa;
+}
+
+.home__delete-confirmation > strong { color: #991b1b; font-size: 1rem; }
+.home__delete-confirmation > span { color: var(--font-color); font-size: 0.9rem; }
+.home__delete-confirmation .home__delete-confirm { border-color: #b91c1c; background: #b91c1c; color: white; }
+.home__delete-message { border-color: #a7f3d0; background: #f0fdf4; }
+.home__delete-message > span { display: grid; width: 44px; height: 44px; margin: 0 auto; place-items: center; border-radius: 50%; background: #d1fae5; color: #047857; font-size: 1.3rem; font-weight: 900; }
+.home__delete-message > strong { color: #065f46; font-size: 0.92rem; }
