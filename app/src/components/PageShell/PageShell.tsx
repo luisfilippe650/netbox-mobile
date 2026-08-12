@@ -17,15 +17,25 @@ const pageShellStyles = `
 .page-shell__frame {
   width: min(100%, 480px);
   min-height: 100vh;
-  padding: 16px 14px 24px;
+  padding: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.page-shell__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: 14px;
+  padding: 16px 14px 24px;
+  box-sizing: border-box;
 }
 
 .page-shell__hero {
-  width: calc(100% + 28px);
-  margin-inline: -14px;
+  width: 100%;
+  margin: 0;
   box-sizing: border-box;
   border-radius: 30px;
   padding: 22px 20px;
@@ -59,13 +69,11 @@ const pageShellStyles = `
 }
 
 @media (max-width: 360px) {
-  .page-shell__frame {
+  .page-shell__content {
     padding-inline: 12px;
   }
 
   .page-shell__hero {
-    width: calc(100% + 24px);
-    margin-inline: -12px;
     padding: 18px 16px;
   }
 
@@ -109,7 +117,7 @@ export function PageShell({ eyebrow, title, subtitle, className, brand, headerAc
           {title ? <h1 className="page-shell__title">{title}</h1> : null}
           {subtitle ? <p className="page-shell__subtitle">{subtitle}</p> : null}
         </header>
-        {children}
+        <div className="page-shell__content">{children}</div>
       </section>
     </main>
   )

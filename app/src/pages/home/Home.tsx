@@ -147,14 +147,7 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
           <button
             className="home__quick-action home__quick-action--primary"
             type="button"
-            onClick={() =>
-              openActionOptions({
-                key: "scanner",
-                title: "Scanner",
-                text: "Leia um QR code",
-                icon: scannerIcon,
-              })
-            }
+            onClick={() => onOpenPage("scanner")}
           >
             <span className="home__quick-icon">
               <img src={scannerIcon} alt="" />
@@ -250,7 +243,9 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
             >
               ×
             </button>
-            <span className={`home__modal-icon home__modal-icon--contained${selectedAction.key === "location-info" ? " home__modal-icon--connections" : ""}`}>
+            <span
+              className={`home__modal-icon home__modal-icon--contained${selectedAction.key === "location-info" ? " home__modal-icon--connections" : ""}`}
+            >
               <img src={selectedAction.icon} alt="" />
             </span>
             <h2 id="home-action-title">{selectedAction.title}</h2>

@@ -3,16 +3,16 @@
 }
 
 .home-page .page-shell__frame {
-  gap: 16px;
+  gap: 0;
 }
 
 .home-page .page-shell__hero {
   position: relative;
-  overflow: visible;
+  width: 100%;
+  margin: 0;
   padding: 22px 22px;
-  border-radius: 2px;
+  border-radius: 0;
   background: linear-gradient(135deg, var(--primary-color), #073d8f);
-  box-shadow: 0 12px 26px rgba(11, 86, 197, 0.2);
 }
 
 .home-page .page-shell__header-action {
