@@ -27,3 +27,19 @@
   border-radius: 16px;
   display: block;
 }
+.scanner__panel + .page-button {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--surface-color);
+  color: var(--primary-color);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.scanner__panel .page-button:active {
+  transform: translateY(1px);
+}

@@ -18,3 +18,37 @@
 .object-list__card .page-section__text {
   padding-top: 2px;
 }
+.object-list__card {
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 16px;
+  background: var(--surface-color);
+}
+
+.object-list__card .page-pill {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: var(--primary-color);
+  color: var(--font-color-on-primary);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.object-list__card .page-section__text {
+  margin: 0;
+  color: var(--secondary-font-color);
+  line-height: 1.5;
+}
+
+.object-list__card + .page-button {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--surface-color);
+  color: var(--primary-color);
+  font-weight: 700;
+  cursor: pointer;
+}

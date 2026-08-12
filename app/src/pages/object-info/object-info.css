@@ -28,3 +28,31 @@
     grid-template-columns: 1fr;
   }
 }
+.object-info__card {
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 16px;
+  background: var(--surface-color);
+}
+
+.object-info__card .page-section__text {
+  margin: 0;
+  color: var(--secondary-font-color);
+  line-height: 1.5;
+}
+
+.object-info__grid {
+  display: grid;
+  gap: 10px;
+}
+
+.object-info__card + .page-button {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--surface-color);
+  color: var(--primary-color);
+  font-weight: 700;
+  cursor: pointer;
+}

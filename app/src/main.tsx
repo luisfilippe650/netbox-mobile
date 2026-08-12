@@ -8,8 +8,6 @@ import ObjectListPage from './pages/object-list/ObjectList'
 import RackInfoPage from './pages/rack-info/RackInfo'
 import RowInfoPage from './pages/row-info/RowInfo'
 import LocationInfoPage from './pages/location-info/LocationInfo'
-import './pages/shared/page-shell.css'
-import './pages/shared/page-common.css'
 import './utils/colors.css'
 
 type Page =
@@ -18,6 +16,7 @@ type Page =
   | 'scanner'
   | 'object-info'
   | 'object-list'
+  | 'device'
   | 'rack-info'
   | 'row-info'
   | 'location-info'
@@ -46,7 +45,7 @@ function App() {
     return <ObjectInfoPage onBack={() => setPage('home')} />
   }
 
-  if (page === 'object-list') {
+  if (page === 'object-list' || page === 'device') {
     return <ObjectListPage onBack={() => setPage('home')} />
   }
 

@@ -1,5 +1,6 @@
 import logo from "../../assets/logos/logo-coids-sem-texto.png";
 import inpe from "../../assets/logos/Logo_INPE_maior.jpg";
+import { useState } from "react";
 import "../../utils/colors.css";
 import "./login.css";
 
@@ -8,6 +9,8 @@ type LoginProps = {
 };
 
 export default function Login({ onLogin }: LoginProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <main className="login-page">
       <section className="login-card" aria-labelledby="login-title">
@@ -54,14 +57,25 @@ export default function Login({ onLogin }: LoginProps) {
 
             <div className="login-field">
               <label htmlFor="password">Senha</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="Digite sua senha"
-                required
-              />
+              <div className="login-password-input">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="Digite sua senha"
+                  required
+                />
+                <button
+                  className="login-password-toggle"
+                  type="button"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
             </div>
 
             <button className="login-submit" type="submit">

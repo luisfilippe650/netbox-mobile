@@ -1,4 +1,4 @@
-import { PageShell } from '../shared/PageShell'
+import { PageShell } from '../../components/PageShell/PageShell'
 import './row-info.css'
 
 type RowInfoProps = {
