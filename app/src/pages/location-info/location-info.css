@@ -1,0 +1,17 @@
+.location-info__card {
+  display: grid;
+}
+
+.location-info__list {
+  display: grid;
+  gap: 10px;
+}
+
+.location-info__list .page-section {
+  display: grid;
+  gap: 4px;
+}
+
+.location-info__card .page-section {
+  text-align: left;
+}

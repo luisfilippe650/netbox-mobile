@@ -1,0 +1,17 @@
+.row-info__card {
+  display: grid;
+}
+
+.row-info__list {
+  display: grid;
+  gap: 10px;
+}
+
+.row-info__list .page-section {
+  display: grid;
+  gap: 4px;
+}
+
+.row-info__card .page-section {
+  text-align: left;
+}

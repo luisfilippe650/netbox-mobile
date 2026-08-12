@@ -1,0 +1,40 @@
+.rack-info__card {
+  display: grid;
+  gap: 16px;
+}
+
+.rack-info__header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 2px 2px;
+}
+
+.rack-info__header img {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+}
+
+.rack-info__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rack-info__metrics .page-section {
+  text-align: center;
+  padding-block: 12px;
+}
+
+.rack-info__metrics strong {
+  display: block;
+  font-size: 1.02rem;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 390px) {
+  .rack-info__metrics {
+    grid-template-columns: 1fr;
+  }
+}

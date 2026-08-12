@@ -1,0 +1,29 @@
+.scanner__panel {
+  display: grid;
+  gap: 12px;
+}
+
+.scanner__panel img {
+  max-width: 100%;
+}
+
+.scanner__frame {
+  border-radius: 28px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.12), transparent 30%),
+    linear-gradient(180deg, #0d0f1a 0%, #182033 100%);
+  box-shadow: 0 18px 32px rgba(13, 15, 26, 0.2);
+}
+
+.scanner__frame-inner {
+  border-radius: 20px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.scanner__frame-inner img {
+  width: 100%;
+  border-radius: 16px;
+  display: block;
+}

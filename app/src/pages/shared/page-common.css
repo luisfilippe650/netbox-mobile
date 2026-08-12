@@ -1,0 +1,67 @@
+.page-card,
+.page-section {
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--surface-color);
+}
+
+.page-card {
+  padding: 16px;
+}
+
+.page-section {
+  padding: 14px;
+}
+
+.page-section__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.page-section__text {
+  margin: 0;
+  color: var(--secondary-font-color);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.page-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.page-button {
+  border: 0;
+  border-radius: 16px;
+  min-height: 52px;
+  padding: 0 16px;
+  background: var(--primary-color);
+  color: var(--font-color-on-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  width: 100%;
+  cursor: pointer;
+}
+
+.page-button--secondary {
+  background: var(--surface-color);
+  color: var(--primary-color);
+  border: 1px solid var(--border-color);
+}
+
+.page-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--font-color-on-primary);
+}
+
+.page-button:active {
+  transform: translateY(1px);
+}
