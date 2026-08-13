@@ -1,15 +1,21 @@
 import { PageShell } from '../../components/PageShell/PageShell'
 import { useState } from 'react'
+import type { OrganizationItem } from '../organization/OrganizationList'
 import './add-device.css'
 
 type AddDeviceProps = {
   onBack: () => void
+  sites: readonly OrganizationItem[]
+  locations: readonly OrganizationItem[]
 }
 
-export default function AddDevice({ onBack }: AddDeviceProps) {
+export default function AddDevice({ onBack, sites, locations }: AddDeviceProps) {
   const [functions, setFunctions] = useState(['Servidor', 'Rede', 'Armazenamento'])
   const [showFunctionForm, setShowFunctionForm] = useState(false)
   const [newFunction, setNewFunction] = useState('')
+  const [selectedSite, setSelectedSite] = useState('')
+  const [selectedLocation, setSelectedLocation] = useState('')
+  const availableLocations = locations.filter((location) => location.site === selectedSite)
 
   const createFunction = () => {
     const functionName = newFunction.trim()
@@ -90,17 +96,40 @@ export default function AddDevice({ onBack }: AddDeviceProps) {
 
           <label className="add-device__field">
             <span>Site <em>obrigatório</em></span>
-            <select name="site" required defaultValue="">
+            <select
+              name="site"
+              required
+              value={selectedSite}
+              onChange={(event) => {
+                setSelectedSite(event.target.value)
+                setSelectedLocation('')
+              }}
+            >
               <option value="" disabled>Selecione um site</option>
-              <option>Site principal</option>
-              <option>Site secundário</option>
+              {sites.map((site) => <option key={site.id} value={site.name}>{site.name}</option>)}
             </select>
           </label>
 
           <div className="add-device__field-group add-device__field-group--two">
             <label className="add-device__field">
               <span>Local</span>
-              <input type="text" name="location" placeholder="Ex.: Sala A" />
+              <select
+                name="location"
+                value={selectedLocation}
+                disabled={!selectedSite || availableLocations.length === 0}
+                onChange={(event) => setSelectedLocation(event.target.value)}
+              >
+                <option value="">
+                  {!selectedSite
+                    ? 'Selecione o site primeiro'
+                    : availableLocations.length === 0
+                      ? 'Nenhum local neste site'
+                      : 'Selecione um local'}
+                </option>
+                {availableLocations.map((location) => (
+                  <option key={location.id} value={location.name}>{location.name}</option>
+                ))}
+              </select>
             </label>
             <label className="add-device__field">
               <span>Rack</span>

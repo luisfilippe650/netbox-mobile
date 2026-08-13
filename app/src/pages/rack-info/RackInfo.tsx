@@ -1,30 +1,52 @@
 import { PageShell } from '../../components/PageShell/PageShell'
+import rackIcon from '../../assets/icons/rack_medio.png'
+import { getOccupiedUnits, racks, type RackSummary } from '../racks/data'
 import './rack-info.css'
 
 type RackInfoProps = {
   onBack: () => void
+  onSelect: (rack: RackSummary) => void
 }
 
-export default function RackInfo({ onBack }: RackInfoProps) {
+export default function RackInfo({ onBack, onSelect }: RackInfoProps) {
   return (
-    <PageShell eyebrow="Rack" title="Capacidade e ocupação" subtitle="Mesmo espírito do RackApp, mas sem carregar a lógica agora.">
-      <section className="page-card rack-info__card">
-        <div className="rack-info__header">
-          <img src="/src/assets/icons/rack_cheio.png" alt="" />
-          <div>
-            <strong>Rack 12</strong>
-            <p className="page-section__text">Status visual de ocupação e métricas resumidas.</p>
-          </div>
-        </div>
-        <div className="rack-info__metrics">
-          <div className="page-section"><strong>42U</strong><p className="page-section__text">Altura</p></div>
-          <div className="page-section"><strong>30U</strong><p className="page-section__text">Ocupado</p></div>
-          <div className="page-section"><strong>12U</strong><p className="page-section__text">Livre</p></div>
+    <PageShell
+      className="rack-list-page"
+      eyebrow="Racks"
+      title="Visualizar racks"
+      subtitle="Selecione um rack para consultar sua ocupação e os equipamentos alocados."
+    >
+      <section className="rack-list__heading">
+        <div>
+          <h2>Racks cadastrados</h2>
+          <p>{racks.length} racks encontrados</p>
         </div>
       </section>
-      <button className="page-button page-button--secondary" type="button" onClick={onBack}>
-        Voltar
-      </button>
+
+      <div className="rack-list">
+        {racks.map((rack) => {
+          const occupiedUnits = getOccupiedUnits(rack)
+          return (
+            <button className="rack-list__card" type="button" key={rack.id} onClick={() => onSelect(rack)}>
+              <span className="rack-list__icon"><img src={rackIcon} alt="" /></span>
+              <span className="rack-list__content">
+                <span className="rack-list__title">
+                  <strong>{rack.name}</strong>
+                  <small>{rack.id}</small>
+                </span>
+                <span className="rack-list__location">{rack.location} · {rack.site}</span>
+                <span className="rack-list__usage">
+                  <span><i style={{ width: `${(occupiedUnits / rack.height) * 100}%` }} /></span>
+                  <small>{occupiedUnits}U ocupadas de {rack.height}U</small>
+                </span>
+              </span>
+              <span className="rack-list__arrow" aria-hidden="true">›</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <button className="rack-list__back" type="button" onClick={onBack}>Voltar</button>
     </PageShell>
   )
 }

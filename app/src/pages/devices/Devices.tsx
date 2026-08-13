@@ -1,28 +1,18 @@
 import { PageShell } from '../../components/PageShell/PageShell'
 import deviceIcon from '../../assets/icons/inserir_id_manualmente.png'
 import { useState } from 'react'
+import type { DeviceSummary } from './devices-data'
 import './devices.css'
 
 type DevicesProps = {
   onBack: () => void
   onAdd: () => void
   onSelect: (device: DeviceSummary) => void
+  items: readonly DeviceSummary[]
+  onItemsChange: (items: DeviceSummary[]) => void
 }
 
-export type DeviceSummary = {
-  id: string
-  name: string
-  meta: string
-}
-
-const items: DeviceSummary[] = [
-  { id: '1001', name: 'Servidor principal', meta: 'Objeto ativo - sala A' },
-  { id: '1002', name: 'Switch core', meta: 'Objeto com rack vinculado' },
-  { id: '1003', name: 'UPS', meta: 'Cadastro visual simplificado' },
-]
-
-export default function Devices({ onBack, onAdd, onSelect }: DevicesProps) {
-  const [deviceItems, setDeviceItems] = useState(items)
+export default function Devices({ onBack, onAdd, onSelect, items, onItemsChange }: DevicesProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
 
@@ -36,7 +26,7 @@ export default function Devices({ onBack, onAdd, onSelect }: DevicesProps) {
   }
 
   const deleteSelected = () => {
-    setDeviceItems((current) => current.filter((item) => !selectedIds.has(item.id)))
+    onItemsChange(items.filter((item) => !selectedIds.has(item.id)))
     setSelectedIds(new Set())
     setShowDeleteConfirmation(false)
   }
@@ -60,7 +50,7 @@ export default function Devices({ onBack, onAdd, onSelect }: DevicesProps) {
           ) : null}
         </div>
       </section>
-      {deviceItems.map((item) => (
+      {items.map((item) => (
         <article
           key={item.id}
           className="page-card devices__card"
@@ -83,10 +73,10 @@ export default function Devices({ onBack, onAdd, onSelect }: DevicesProps) {
             </div>
             <span className="devices__status">Ativo</span>
           </div>
-          <p className="page-section__text">{item.meta}</p>
+          <p className="page-section__text">{item.rack} · U{item.allocatedUnit} · {item.region}</p>
         </article>
       ))}
-      {deviceItems.length === 0 ? <p className="devices__empty">Nenhum dispositivo cadastrado.</p> : null}
+      {items.length === 0 ? <p className="devices__empty">Nenhum dispositivo cadastrado.</p> : null}
       <button className="page-button page-button--secondary" type="button" onClick={onBack}>
         Voltar
       </button>

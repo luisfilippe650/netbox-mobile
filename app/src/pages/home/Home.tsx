@@ -5,7 +5,6 @@ import searchIcon from "../../assets/icons/tipos_de_objetos.png";
 import listIcon from "../../assets/icons/inserir_id_manualmente.png";
 import rackIcon from "../../assets/icons/criar_rack.png";
 import rowIcon from "../../assets/icons/row_icone.png";
-import locationIcon from "../../assets/icons/conexao-icon.png";
 import coidsLogo from "../../assets/logos/logo-coids.png";
 import inpeLogo from "../../assets/logos/Logo_INPE_maior.jpg";
 import "./home.css";
@@ -19,10 +18,17 @@ type HomeProps = {
       | "devices"
       | "add-device"
       | "add-device-type"
+      | "manufacturers"
+      | "device-functions"
       | "device"
       | "rack-info"
+      | "add-rack"
+      | "add-rack-group"
       | "row-info"
-      | "location-info",
+      | "location-info"
+      | "sites"
+      | "locations"
+      | "regions",
   ) => void;
 };
 
@@ -39,10 +45,17 @@ type HomePage =
   | "devices"
   | "add-device"
   | "add-device-type"
+  | "manufacturers"
+  | "device-functions"
   | "device"
   | "rack-info"
+  | "add-rack"
+  | "add-rack-group"
   | "organizacao"
-  | "location-info";
+  | "location-info"
+  | "sites"
+  | "locations"
+  | "regions";
 
 type NavigableHomePage = Exclude<HomePage, "organizacao">;
 
@@ -76,16 +89,12 @@ const actions: readonly HomeAction[] = [
     text: "Gerencie o local do datacenter",
     icon: rowIcon,
   },
-  {
-    key: "location-info",
-    title: "Conexões",
-    text: "Gerencie as conexões",
-    icon: locationIcon,
-  },
 ] as const;
 
 const deviceOptions: readonly ActionOption[] = [
   { label: "Visualizar dispositivos", page: "devices" },
+  { label: "Fabricantes", page: "manufacturers" },
+  { label: "Funções de dispositivos", page: "device-functions" },
   { label: "Adicionar dispositivos", page: "add-device", tone: "success" },
   { label: "Adicionar tipo de dispositivo", page: "add-device-type", tone: "success" },
   { label: "Deletar dispositivos", tone: "danger" },
@@ -94,22 +103,22 @@ const deviceOptions: readonly ActionOption[] = [
 
 const rackOptions: readonly ActionOption[] = [
   { label: "Visualizar racks", page: "rack-info" },
-  { label: "Adicionar rack", tone: "success" },
-  { label: "Adicionar grupo de racks", tone: "success" },
-  { label: "Adicionar tipos de racks", tone: "success" },
+  { label: "Adicionar rack", page: "add-rack", tone: "success" },
+  { label: "Adicionar grupo de racks", page: "add-rack-group", tone: "success" },
   { label: "Deletar rack", tone: "danger" },
   { label: "Deletar grupo de rack", tone: "danger" },
-  { label: "Deletar tipo de rack", tone: "danger" },
 ];
 
 const organizationOptions: readonly ActionOption[] = [
-  { label: "Sites" },
-  { label: "Locais" },
-  { label: "Regiões" },
+  { label: "Sites", page: "sites" },
+  { label: "Locais", page: "locations" },
+  { label: "Regiões", page: "regions" },
 ];
 
 export default function Home({ onLogout, onOpenPage }: HomeProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<HomeAction | null>(null);
   const [deleteKind, setDeleteKind] = useState<DeleteKind | null>(null);
   const [deleteSelection, setDeleteSelection] = useState("");
@@ -163,6 +172,24 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
           </button>
           {menuOpen ? (
             <div className="home__menu-popover">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setAboutOpen(true);
+                }}
+              >
+                Sobre
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setHelpOpen(true);
+                }}
+              >
+                Como usar
+              </button>
               <button type="button" onClick={onLogout}>
                 Sair
               </button>
@@ -226,10 +253,9 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
             >
               {action.key === "rack-info" ||
               action.key === "device" ||
-              action.key === "location-info" ||
               action.key === "organizacao" ? (
                 <span
-                  className={`home__icon ${action.key === "rack-info" ? "home__icon--rack" : action.key === "organizacao" ? "home__icon--row" : action.key === "location-info" ? "home__icon--connections" : "home__icon--large"}`}
+                  className={`home__icon ${action.key === "rack-info" ? "home__icon--rack" : action.key === "organizacao" ? "home__icon--row" : "home__icon--large"}`}
                 >
                   <img src={action.icon} alt="" />
                 </span>
@@ -249,6 +275,115 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
         <img src={inpeLogo} alt="Logo do INPE" />
         <span>Instituto Nacional de Pesquisas Espaciais</span>
       </footer>
+
+      {aboutOpen ? (
+        <div
+          className="home__modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setAboutOpen(false);
+          }}
+        >
+          <section
+            className="home__modal home__about"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="home-about-title"
+          >
+            <span className="home__modal-handle" aria-hidden="true" />
+            <button
+              className="home__modal-close"
+              type="button"
+              aria-label="Fechar informações sobre o aplicativo"
+              onClick={() => setAboutOpen(false)}
+            >
+              ×
+            </button>
+            <img className="home__about-logo" src={coidsLogo} alt="COIDS" />
+            <h2 id="home-about-title">Sobre o aplicativo</h2>
+            <p>
+              O Gerenciador de Datacenter foi criado para facilitar o cadastro e a consulta de
+              dispositivos, racks, sites e locais da infraestrutura do INPE.
+            </p>
+            <p>
+              Pelo aplicativo, você pode organizar equipamentos, acompanhar a ocupação dos racks
+              e consultar informações usando a busca ou o scanner de QR Code.
+            </p>
+            <p>
+              O aplicativo permite realizar ações rápidas de cadastro no NetBox. Para operações
+              mais complexas ou configurações avançadas, utilize diretamente o NetBox.
+            </p>
+            <button className="home__about-close" type="button" onClick={() => setAboutOpen(false)}>
+              Fechar
+            </button>
+          </section>
+        </div>
+      ) : null}
+
+      {helpOpen ? (
+        <div
+          className="home__modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setHelpOpen(false);
+          }}
+        >
+          <section
+            className="home__modal home__help"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="home-help-title"
+          >
+            <span className="home__modal-handle" aria-hidden="true" />
+            <button
+              className="home__modal-close"
+              type="button"
+              aria-label="Fechar instruções de uso"
+              onClick={() => setHelpOpen(false)}
+            >
+              ×
+            </button>
+            <span className="home__help-icon" aria-hidden="true">?</span>
+            <h2 id="home-help-title">Como usar</h2>
+            <p className="home__help-intro">
+              Use o aplicativo para cadastros rápidos. Campos marcados como obrigatórios precisam
+              ser preenchidos antes de salvar.
+            </p>
+
+            <article className="home__help-card">
+              <h3>Criar um rack</h3>
+              <ol>
+                <li>Selecione o <strong>site</strong>. Esse campo é obrigatório.</li>
+                <li>Escolha um <strong>local</strong> vinculado ao site selecionado, se necessário.</li>
+                <li>Informe opcionalmente o grupo de racks e a descrição.</li>
+                <li>Digite o <strong>nome</strong> do rack.</li>
+                <li>Escolha a <strong>largura</strong>: 10, 19, 21 ou 23 inches. O padrão é 19 inches.</li>
+                <li>Confira a <strong>unidade inicial</strong>, padrão 1, e a <strong>altura</strong>, padrão 42U.</li>
+              </ol>
+              <p>Site, nome, largura, unidade inicial e altura são obrigatórios.</p>
+            </article>
+
+            <article className="home__help-card">
+              <h3>Criar um dispositivo</h3>
+              <ol>
+                <li>Informe o nome e, se desejar, uma descrição.</li>
+                <li>Selecione a <strong>função</strong> e o <strong>tipo do dispositivo</strong>.</li>
+                <li>Selecione o <strong>site</strong>. Os locais disponíveis serão filtrados por ele.</li>
+                <li>Escolha o local e informe o rack e a posição, quando aplicável.</li>
+                <li>Antes de salvar, confira se a posição desejada está livre no rack.</li>
+              </ol>
+              <p>Função, tipo do dispositivo e site são obrigatórios.</p>
+            </article>
+
+            <aside className="home__help-note">
+              Para operações mais complexas e configurações avançadas, utilize diretamente o NetBox.
+            </aside>
+            <button className="home__about-close" type="button" onClick={() => setHelpOpen(false)}>
+              Entendi
+            </button>
+          </section>
+        </div>
+      ) : null}
 
       {selectedAction ? (
         <div
