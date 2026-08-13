@@ -1,10 +1,10 @@
-import { OrganizationList, type OrganizationItem } from './OrganizationList'
+import { OrganizationList, type OrganizationItem } from "./OrganizationList";
 
 type SitesProps = {
-  onBack: () => void
-  items: readonly OrganizationItem[]
-  onItemsChange: (items: OrganizationItem[]) => void
-}
+  onBack: () => void;
+  items: readonly OrganizationItem[];
+  onItemsChange: (items: OrganizationItem[]) => void;
+};
 
 export default function Sites({ onBack, items, onItemsChange }: SitesProps) {
   return (
@@ -19,5 +19,5 @@ export default function Sites({ onBack, items, onItemsChange }: SitesProps) {
       onItemsChange={onItemsChange}
       onBack={onBack}
     />
-  )
+  );
 }

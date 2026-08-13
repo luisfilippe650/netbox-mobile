@@ -69,7 +69,7 @@
   bottom: -3px;
   border-radius: 2px;
   background: var(--secondary-font-color);
-  content: '';
+  content: "";
   transform: rotate(45deg);
 }
 
@@ -149,7 +149,10 @@
 
 .organization__card--clickable {
   cursor: pointer;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .organization__card--clickable:hover {

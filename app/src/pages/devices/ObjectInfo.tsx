@@ -1,68 +1,80 @@
-import { useState, type FormEvent } from 'react'
-import QRCode from 'qrcode'
-import { PageShell } from '../../components/PageShell/PageShell'
-import type { OrganizationItem } from '../organization/OrganizationList'
-import type { DeviceSummary } from './devices-data'
-import './object-info.css'
+import { useState, type FormEvent } from "react";
+import QRCode from "qrcode";
+import { PageShell } from "../../components/PageShell/PageShell";
+import type { OrganizationItem } from "../organization/OrganizationList";
+import type { DeviceSummary } from "./devices-data";
+import "./object-info.css";
 
 type ObjectInfoProps = {
-  onBack: () => void
-  device: DeviceSummary
-  sites: readonly OrganizationItem[]
-  onUpdate: (device: DeviceSummary) => void
-}
+  onBack: () => void;
+  device: DeviceSummary;
+  sites: readonly OrganizationItem[];
+  onUpdate: (device: DeviceSummary) => void;
+};
 
-export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectInfoProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [draft, setDraft] = useState<DeviceSummary>({ ...device })
-  const [savedMessage, setSavedMessage] = useState(false)
-  const [qrCodeUrl, setQrCodeUrl] = useState('')
-  const [isGeneratingQrCode, setIsGeneratingQrCode] = useState(false)
-  const [qrCodeError, setQrCodeError] = useState('')
+export default function ObjectInfo({
+  onBack,
+  device,
+  sites,
+  onUpdate,
+}: ObjectInfoProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState<DeviceSummary>({ ...device });
+  const [savedMessage, setSavedMessage] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [isGeneratingQrCode, setIsGeneratingQrCode] = useState(false);
+  const [qrCodeError, setQrCodeError] = useState("");
 
-  const updateField = <K extends keyof DeviceSummary>(field: K, value: DeviceSummary[K]) => {
-    setDraft((current) => ({ ...current, [field]: value }))
-    setSavedMessage(false)
-  }
+  const updateField = <K extends keyof DeviceSummary>(
+    field: K,
+    value: DeviceSummary[K],
+  ) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+    setSavedMessage(false);
+  };
 
   const saveChanges = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    onUpdate({ ...draft, name: draft.name.trim(), description: draft.description.trim() })
-    setIsEditing(false)
-    setSavedMessage(true)
-  }
+    event.preventDefault();
+    onUpdate({
+      ...draft,
+      name: draft.name.trim(),
+      description: draft.description.trim(),
+    });
+    setIsEditing(false);
+    setSavedMessage(true);
+  };
 
   const cancelEditing = () => {
-    setDraft({ ...device })
-    setIsEditing(false)
-    setSavedMessage(false)
-  }
+    setDraft({ ...device });
+    setIsEditing(false);
+    setSavedMessage(false);
+  };
 
   const generateQrCode = async () => {
-    setIsGeneratingQrCode(true)
-    setQrCodeError('')
+    setIsGeneratingQrCode(true);
+    setQrCodeError("");
     try {
       const imageUrl = await QRCode.toDataURL(device.id, {
-        errorCorrectionLevel: 'H',
+        errorCorrectionLevel: "H",
         margin: 2,
         width: 640,
-        color: { dark: '#0d0f1a', light: '#ffffff' },
-      })
-      setQrCodeUrl(imageUrl)
+        color: { dark: "#0d0f1a", light: "#ffffff" },
+      });
+      setQrCodeUrl(imageUrl);
     } catch {
-      setQrCodeError('Não foi possível gerar o QR Code. Tente novamente.')
+      setQrCodeError("Não foi possível gerar o QR Code. Tente novamente.");
     } finally {
-      setIsGeneratingQrCode(false)
+      setIsGeneratingQrCode(false);
     }
-  }
+  };
 
   const downloadQrCode = () => {
-    if (!qrCodeUrl) return
-    const link = document.createElement('a')
-    link.href = qrCodeUrl
-    link.download = `dispositivo-${device.id}-qr-code.png`
-    link.click()
-  }
+    if (!qrCodeUrl) return;
+    const link = document.createElement("a");
+    link.href = qrCodeUrl;
+    link.download = `dispositivo-${device.id}-qr-code.png`;
+    link.click();
+  };
 
   return (
     <PageShell
@@ -73,8 +85,14 @@ export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectIn
     >
       <section className="object-info__toolbar">
         <div>
-          <strong>{isEditing ? 'Personalização ativada' : 'Modo de consulta'}</strong>
-          <span>{isEditing ? 'Altere os campos e salve ao finalizar.' : 'Os dados estão protegidos contra alterações.'}</span>
+          <strong>
+            {isEditing ? "Personalização ativada" : "Modo de consulta"}
+          </strong>
+          <span>
+            {isEditing
+              ? "Altere os campos e salve ao finalizar."
+              : "Os dados estão protegidos contra alterações."}
+          </span>
         </div>
         <div className="object-info__toolbar-actions">
           <button
@@ -83,20 +101,32 @@ export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectIn
             disabled={isGeneratingQrCode}
             onClick={generateQrCode}
           >
-            {isGeneratingQrCode ? 'Gerando...' : 'Gerar QR Code'}
+            {isGeneratingQrCode ? "Gerando..." : "Gerar QR Code"}
           </button>
           <button
-            className={isEditing ? 'object-info__customize object-info__customize--active' : 'object-info__customize'}
+            className={
+              isEditing
+                ? "object-info__customize object-info__customize--active"
+                : "object-info__customize"
+            }
             type="button"
-            onClick={() => isEditing ? cancelEditing() : setIsEditing(true)}
+            onClick={() => (isEditing ? cancelEditing() : setIsEditing(true))}
           >
-            {isEditing ? 'Cancelar' : 'Personalizar'}
+            {isEditing ? "Cancelar" : "Personalizar"}
           </button>
         </div>
       </section>
 
-      {savedMessage ? <p className="object-info__success" role="status">Alterações salvas com sucesso.</p> : null}
-      {qrCodeError ? <p className="object-info__error" role="alert">{qrCodeError}</p> : null}
+      {savedMessage ? (
+        <p className="object-info__success" role="status">
+          Alterações salvas com sucesso.
+        </p>
+      ) : null}
+      {qrCodeError ? (
+        <p className="object-info__error" role="alert">
+          {qrCodeError}
+        </p>
+      ) : null}
 
       <form className="object-info__form" onSubmit={saveChanges}>
         <section className="object-info__card">
@@ -111,14 +141,17 @@ export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectIn
               required
               value={draft.name}
               readOnly={!isEditing}
-              onChange={(event) => updateField('name', event.target.value)}
+              onChange={(event) => updateField("name", event.target.value)}
             />
           </label>
 
           <label className="object-info__field">
             <span>Etiqueta</span>
             <input value={draft.label} readOnly aria-readonly="true" />
-            <small>A etiqueta é usada para identificar o equipamento e não pode ser personalizada aqui.</small>
+            <small>
+              A etiqueta é usada para identificar o equipamento e não pode ser
+              personalizada aqui.
+            </small>
           </label>
 
           <label className="object-info__field">
@@ -127,7 +160,9 @@ export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectIn
               rows={3}
               value={draft.description}
               readOnly={!isEditing}
-              onChange={(event) => updateField('description', event.target.value)}
+              onChange={(event) =>
+                updateField("description", event.target.value)
+              }
             />
           </label>
         </section>
@@ -144,9 +179,13 @@ export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectIn
               required
               value={draft.site}
               disabled={!isEditing}
-              onChange={(event) => updateField('site', event.target.value)}
+              onChange={(event) => updateField("site", event.target.value)}
             >
-              {sites.map((site) => <option key={site.id} value={site.name}>{site.name}</option>)}
+              {sites.map((site) => (
+                <option key={site.id} value={site.name}>
+                  {site.name}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -155,7 +194,7 @@ export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectIn
             <input
               value={draft.region}
               readOnly={!isEditing}
-              onChange={(event) => updateField('region', event.target.value)}
+              onChange={(event) => updateField("region", event.target.value)}
             />
           </label>
 
@@ -165,7 +204,7 @@ export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectIn
               <input
                 value={draft.rack}
                 readOnly={!isEditing}
-                onChange={(event) => updateField('rack', event.target.value)}
+                onChange={(event) => updateField("rack", event.target.value)}
               />
             </label>
             <label className="object-info__field">
@@ -176,41 +215,74 @@ export default function ObjectInfo({ onBack, device, sites, onUpdate }: ObjectIn
                 required
                 value={draft.allocatedUnit}
                 readOnly={!isEditing}
-                onChange={(event) => updateField('allocatedUnit', Number(event.target.value))}
+                onChange={(event) =>
+                  updateField("allocatedUnit", Number(event.target.value))
+                }
               />
             </label>
           </div>
         </section>
 
-        {isEditing ? <button className="object-info__save" type="submit">Salvar alterações</button> : null}
+        {isEditing ? (
+          <button className="object-info__save" type="submit">
+            Salvar alterações
+          </button>
+        ) : null}
       </form>
 
-      <button className="object-info__back" type="button" onClick={onBack}>Voltar</button>
+      <button className="object-info__back" type="button" onClick={onBack}>
+        Voltar
+      </button>
 
       {qrCodeUrl ? (
         <div
           className="object-info__qr-backdrop"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setQrCodeUrl('')
+            if (event.target === event.currentTarget) setQrCodeUrl("");
           }}
         >
-          <section className="object-info__qr-modal" role="dialog" aria-modal="true" aria-labelledby="object-qr-title">
-            <button className="object-info__qr-close" type="button" aria-label="Fechar QR Code" onClick={() => setQrCodeUrl('')}>×</button>
-            <span className="object-info__qr-icon" aria-hidden="true">▦</span>
+          <section
+            className="object-info__qr-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="object-qr-title"
+          >
+            <button
+              className="object-info__qr-close"
+              type="button"
+              aria-label="Fechar QR Code"
+              onClick={() => setQrCodeUrl("")}
+            >
+              ×
+            </button>
+            <span className="object-info__qr-icon" aria-hidden="true">
+              ▦
+            </span>
             <h2 id="object-qr-title">QR Code do dispositivo</h2>
-            <p>O código contém o ID <strong>{device.id}</strong>.</p>
+            <p>
+              O código contém o ID <strong>{device.id}</strong>.
+            </p>
             <div className="object-info__qr-image">
-              <img src={qrCodeUrl} alt={`QR Code do dispositivo ${device.id}`} />
+              <img
+                src={qrCodeUrl}
+                alt={`QR Code do dispositivo ${device.id}`}
+              />
             </div>
-            <small>Use o scanner do aplicativo para identificar este dispositivo.</small>
+            <small>
+              Use o scanner do aplicativo para identificar este dispositivo.
+            </small>
             <div className="object-info__qr-actions">
-              <button type="button" onClick={() => setQrCodeUrl('')}>Fechar</button>
-              <button type="button" onClick={downloadQrCode}>Baixar QR Code</button>
+              <button type="button" onClick={() => setQrCodeUrl("")}>
+                Fechar
+              </button>
+              <button type="button" onClick={downloadQrCode}>
+                Baixar QR Code
+              </button>
             </div>
           </section>
         </div>
       ) : null}
     </PageShell>
-  )
+  );
 }

@@ -1,100 +1,142 @@
-import { PageShell } from '../../components/PageShell/PageShell'
-import deviceIcon from '../../assets/icons/inserir_id_manualmente.png'
-import { useState } from 'react'
-import type { DeviceSummary } from './devices-data'
-import './devices.css'
+import { PageShell } from "../../components/PageShell/PageShell";
+import deviceIcon from "../../assets/icons/inserir_id_manualmente.png";
+import { useState } from "react";
+import type { DeviceSummary } from "./devices-data";
+import "./devices.css";
 
 type DevicesProps = {
-  onBack: () => void
-  onAdd: () => void
-  onSelect: (device: DeviceSummary) => void
-  items: readonly DeviceSummary[]
-  onItemsChange: (items: DeviceSummary[]) => void
-}
+  onBack: () => void;
+  onAdd: () => void;
+  onSelect: (device: DeviceSummary) => void;
+  items: readonly DeviceSummary[];
+  onItemsChange: (items: DeviceSummary[]) => void;
+};
 
-export default function Devices({ onBack, onAdd, onSelect, items, onItemsChange }: DevicesProps) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
-  const [searchBy, setSearchBy] = useState<'name' | 'id'>('name')
-  const [searchTerm, setSearchTerm] = useState('')
+export default function Devices({
+  onBack,
+  onAdd,
+  onSelect,
+  items,
+  onItemsChange,
+}: DevicesProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [searchBy, setSearchBy] = useState<"name" | "id">("name");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase('pt-BR')
+  const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase("pt-BR");
   const filteredItems = items.filter((item) => {
-    if (!normalizedSearchTerm) return true
+    if (!normalizedSearchTerm) return true;
 
-    const value = searchBy === 'id' ? item.id : item.name
-    return value.toLocaleLowerCase('pt-BR').includes(normalizedSearchTerm)
-  })
+    const value = searchBy === "id" ? item.id : item.name;
+    return value.toLocaleLowerCase("pt-BR").includes(normalizedSearchTerm);
+  });
 
   const toggleSelection = (id: string) => {
     setSelectedIds((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const deleteSelected = () => {
-    onItemsChange(items.filter((item) => !selectedIds.has(item.id)))
-    setSelectedIds(new Set())
-    setShowDeleteConfirmation(false)
-  }
+    onItemsChange(items.filter((item) => !selectedIds.has(item.id)));
+    setSelectedIds(new Set());
+    setShowDeleteConfirmation(false);
+  };
 
   return (
-    <PageShell className="devices-page" eyebrow="Dispositivos" title="Seus dispositivos" subtitle="Consulte os equipamentos cadastrados no datacenter.">
-      <section className="devices__heading" aria-label="Resumo dos dispositivos">
+    <PageShell
+      className="devices-page"
+      eyebrow="Dispositivos"
+      title="Seus dispositivos"
+      subtitle="Consulte os equipamentos cadastrados no datacenter."
+    >
+      <section
+        className="devices__heading"
+        aria-label="Resumo dos dispositivos"
+      >
         <div>
           <h2>Dispositivos cadastrados</h2>
           <p>Equipamentos disponíveis para consulta</p>
         </div>
         <div className="devices__actions">
-          <button className="devices__add-button" type="button" aria-label="Adicionar dispositivo" onClick={onAdd}>
+          <button
+            className="devices__add-button"
+            type="button"
+            aria-label="Adicionar dispositivo"
+            onClick={onAdd}
+          >
             <span aria-hidden="true">+</span>
             Adicionar
           </button>
           {selectedIds.size > 0 ? (
-            <button className="devices__delete-button" type="button" onClick={() => setShowDeleteConfirmation(true)}>
+            <button
+              className="devices__delete-button"
+              type="button"
+              onClick={() => setShowDeleteConfirmation(true)}
+            >
               Excluir ({selectedIds.size})
             </button>
           ) : null}
         </div>
       </section>
-      <section className="devices__search" aria-labelledby="devices-search-title">
+      <section
+        className="devices__search"
+        aria-labelledby="devices-search-title"
+      >
         <div className="devices__search-heading">
           <div>
             <h2 id="devices-search-title">Buscar dispositivo</h2>
             <p>Escolha como deseja pesquisar.</p>
           </div>
-          {normalizedSearchTerm ? <span>{filteredItems.length} resultado(s)</span> : null}
+          {normalizedSearchTerm ? (
+            <span>{filteredItems.length} resultado(s)</span>
+          ) : null}
         </div>
-        <div className="devices__search-modes" role="group" aria-label="Pesquisar dispositivo por">
+        <div
+          className="devices__search-modes"
+          role="group"
+          aria-label="Pesquisar dispositivo por"
+        >
           <button
-            className={searchBy === 'name' ? 'devices__search-mode devices__search-mode--active' : 'devices__search-mode'}
+            className={
+              searchBy === "name"
+                ? "devices__search-mode devices__search-mode--active"
+                : "devices__search-mode"
+            }
             type="button"
-            aria-pressed={searchBy === 'name'}
-            onClick={() => setSearchBy('name')}
+            aria-pressed={searchBy === "name"}
+            onClick={() => setSearchBy("name")}
           >
             Nome
           </button>
           <button
-            className={searchBy === 'id' ? 'devices__search-mode devices__search-mode--active' : 'devices__search-mode'}
+            className={
+              searchBy === "id"
+                ? "devices__search-mode devices__search-mode--active"
+                : "devices__search-mode"
+            }
             type="button"
-            aria-pressed={searchBy === 'id'}
-            onClick={() => setSearchBy('id')}
+            aria-pressed={searchBy === "id"}
+            onClick={() => setSearchBy("id")}
           >
             ID
           </button>
         </div>
         <label className="devices__search-field">
           <span className="devices__search-icon" aria-hidden="true" />
-          <span className="devices__search-label">{searchBy === 'id' ? 'ID do dispositivo' : 'Nome do dispositivo'}</span>
+          <span className="devices__search-label">
+            {searchBy === "id" ? "ID do dispositivo" : "Nome do dispositivo"}
+          </span>
           <input
             type="search"
-            inputMode={searchBy === 'id' ? 'numeric' : 'search'}
+            inputMode={searchBy === "id" ? "numeric" : "search"}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={searchBy === 'id' ? 'Digite o ID' : 'Digite o nome'}
+            placeholder={searchBy === "id" ? "Digite o ID" : "Digite o nome"}
           />
         </label>
       </section>
@@ -106,45 +148,87 @@ export default function Devices({ onBack, onAdd, onSelect, items, onItemsChange 
           tabIndex={0}
           onClick={() => onSelect(item)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') onSelect(item)
+            if (event.key === "Enter" || event.key === " ") onSelect(item);
           }}
         >
-          <label className="devices__select" aria-label={`Selecionar ${item.name}`} onClick={(event) => event.stopPropagation()}>
-            <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelection(item.id)} />
+          <label
+            className="devices__select"
+            aria-label={`Selecionar ${item.name}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIds.has(item.id)}
+              onChange={() => toggleSelection(item.id)}
+            />
             <span aria-hidden="true" />
           </label>
           <div className="devices__card-top">
-            <span className="devices__icon"><img src={deviceIcon} alt="" /></span>
+            <span className="devices__icon">
+              <img src={deviceIcon} alt="" />
+            </span>
             <div className="devices__card-info">
               <strong>{item.name}</strong>
               <span className="devices__id">ID {item.id}</span>
             </div>
             <span className="devices__status">Ativo</span>
           </div>
-          <p className="page-section__text">{item.rack} · U{item.allocatedUnit} · {item.region}</p>
+          <p className="page-section__text">
+            {item.rack} · U{item.allocatedUnit} · {item.region}
+          </p>
         </article>
       ))}
-      {items.length === 0 ? <p className="devices__empty">Nenhum dispositivo cadastrado.</p> : null}
-      {items.length > 0 && filteredItems.length === 0 ? (
-        <p className="devices__empty">Nenhum dispositivo encontrado por {searchBy === 'id' ? 'esse ID' : 'esse nome'}.</p>
+      {items.length === 0 ? (
+        <p className="devices__empty">Nenhum dispositivo cadastrado.</p>
       ) : null}
-      <button className="page-button page-button--secondary" type="button" onClick={onBack}>
+      {items.length > 0 && filteredItems.length === 0 ? (
+        <p className="devices__empty">
+          Nenhum dispositivo encontrado por{" "}
+          {searchBy === "id" ? "esse ID" : "esse nome"}.
+        </p>
+      ) : null}
+      <button
+        className="page-button page-button--secondary"
+        type="button"
+        onClick={onBack}
+      >
         Voltar
       </button>
 
       {showDeleteConfirmation ? (
         <div className="devices__confirmation-backdrop" role="presentation">
-          <section className="devices__confirmation" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
-            <span className="devices__confirmation-icon" aria-hidden="true">!</span>
+          <section
+            className="devices__confirmation"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-title"
+          >
+            <span className="devices__confirmation-icon" aria-hidden="true">
+              !
+            </span>
             <h2 id="delete-title">Excluir dispositivos?</h2>
-            <p>Você selecionou {selectedIds.size} dispositivo(s). Essa ação não poderá ser desfeita.</p>
+            <p>
+              Você selecionou {selectedIds.size} dispositivo(s). Essa ação não
+              poderá ser desfeita.
+            </p>
             <div className="devices__confirmation-actions">
-              <button type="button" onClick={() => setShowDeleteConfirmation(false)}>Cancelar</button>
-              <button className="devices__confirm-delete" type="button" onClick={deleteSelected}>Excluir</button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirmation(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="devices__confirm-delete"
+                type="button"
+                onClick={deleteSelected}
+              >
+                Excluir
+              </button>
             </div>
           </section>
         </div>
       ) : null}
     </PageShell>
-  )
+  );
 }

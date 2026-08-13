@@ -1,12 +1,19 @@
-import { OrganizationList, type OrganizationItem } from '../organization/OrganizationList'
+import {
+  OrganizationList,
+  type OrganizationItem,
+} from "../organization/OrganizationList";
 
 type DeviceFunctionsProps = {
-  items: readonly OrganizationItem[]
-  onItemsChange: (items: OrganizationItem[]) => void
-  onBack: () => void
-}
+  items: readonly OrganizationItem[];
+  onItemsChange: (items: OrganizationItem[]) => void;
+  onBack: () => void;
+};
 
-export default function DeviceFunctions({ items, onItemsChange, onBack }: DeviceFunctionsProps) {
+export default function DeviceFunctions({
+  items,
+  onItemsChange,
+  onBack,
+}: DeviceFunctionsProps) {
   return (
     <OrganizationList
       singular="Função de dispositivo"
@@ -19,5 +26,5 @@ export default function DeviceFunctions({ items, onItemsChange, onBack }: Device
       onItemsChange={onItemsChange}
       onBack={onBack}
     />
-  )
+  );
 }

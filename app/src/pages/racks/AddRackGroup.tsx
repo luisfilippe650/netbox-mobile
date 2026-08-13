@@ -1,9 +1,9 @@
-import { PageShell } from '../../components/PageShell/PageShell'
-import './add-rack.css'
+import { PageShell } from "../../components/PageShell/PageShell";
+import "./add-rack.css";
 
 type AddRackGroupProps = {
-  onBack: () => void
-}
+  onBack: () => void;
+};
 
 export default function AddRackGroup({ onBack }: AddRackGroupProps) {
   return (
@@ -13,7 +13,10 @@ export default function AddRackGroup({ onBack }: AddRackGroupProps) {
       title="Adicionar grupo de racks"
       subtitle="Preencha as informações do novo grupo."
     >
-      <form className="add-rack__form" onSubmit={(event) => event.preventDefault()}>
+      <form
+        className="add-rack__form"
+        onSubmit={(event) => event.preventDefault()}
+      >
         <section className="add-rack__section">
           <div className="add-rack__section-title">
             <h2>Dados do grupo</h2>
@@ -21,7 +24,9 @@ export default function AddRackGroup({ onBack }: AddRackGroupProps) {
           </div>
 
           <label className="add-rack__field">
-            <span>Nome <em>obrigatório</em></span>
+            <span>
+              Nome <em>obrigatório</em>
+            </span>
             <input
               type="text"
               name="name"
@@ -41,10 +46,14 @@ export default function AddRackGroup({ onBack }: AddRackGroupProps) {
           </label>
         </section>
 
-        <button className="add-rack__save" type="submit">Salvar grupo de racks</button>
+        <button className="add-rack__save" type="submit">
+          Salvar grupo de racks
+        </button>
       </form>
 
-      <button className="add-rack__back" type="button" onClick={onBack}>Voltar</button>
+      <button className="add-rack__back" type="button" onClick={onBack}>
+        Voltar
+      </button>
     </PageShell>
-  )
+  );
 }

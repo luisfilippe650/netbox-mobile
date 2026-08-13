@@ -1,13 +1,18 @@
-import { OrganizationList, type OrganizationItem } from './OrganizationList'
+import { OrganizationList, type OrganizationItem } from "./OrganizationList";
 
 type LocationsProps = {
-  onBack: () => void
-  items: readonly OrganizationItem[]
-  sites: readonly OrganizationItem[]
-  onItemsChange: (items: OrganizationItem[]) => void
-}
+  onBack: () => void;
+  items: readonly OrganizationItem[];
+  sites: readonly OrganizationItem[];
+  onItemsChange: (items: OrganizationItem[]) => void;
+};
 
-export default function Locations({ onBack, items, sites, onItemsChange }: LocationsProps) {
+export default function Locations({
+  onBack,
+  items,
+  sites,
+  onItemsChange,
+}: LocationsProps) {
   return (
     <OrganizationList
       singular="Local"
@@ -21,5 +26,5 @@ export default function Locations({ onBack, items, sites, onItemsChange }: Locat
       onItemsChange={onItemsChange}
       onBack={onBack}
     />
-  )
+  );
 }

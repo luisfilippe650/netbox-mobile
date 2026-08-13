@@ -1,12 +1,19 @@
-import { OrganizationList, type OrganizationItem } from '../organization/OrganizationList'
+import {
+  OrganizationList,
+  type OrganizationItem,
+} from "../organization/OrganizationList";
 
 type ManufacturersProps = {
-  items: readonly OrganizationItem[]
-  onItemsChange: (items: OrganizationItem[]) => void
-  onBack: () => void
-}
+  items: readonly OrganizationItem[];
+  onItemsChange: (items: OrganizationItem[]) => void;
+  onBack: () => void;
+};
 
-export default function Manufacturers({ items, onItemsChange, onBack }: ManufacturersProps) {
+export default function Manufacturers({
+  items,
+  onItemsChange,
+  onBack,
+}: ManufacturersProps) {
   return (
     <OrganizationList
       singular="Fabricante"
@@ -19,5 +26,5 @@ export default function Manufacturers({ items, onItemsChange, onBack }: Manufact
       onItemsChange={onItemsChange}
       onBack={onBack}
     />
-  )
+  );
 }

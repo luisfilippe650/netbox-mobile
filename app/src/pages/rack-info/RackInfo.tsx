@@ -1,12 +1,12 @@
-import { PageShell } from '../../components/PageShell/PageShell'
-import rackIcon from '../../assets/icons/rack_medio.png'
-import { getOccupiedUnits, racks, type RackSummary } from '../racks/data'
-import './rack-info.css'
+import { PageShell } from "../../components/PageShell/PageShell";
+import rackIcon from "../../assets/icons/rack_medio.png";
+import { getOccupiedUnits, racks, type RackSummary } from "../racks/data";
+import "./rack-info.css";
 
 type RackInfoProps = {
-  onBack: () => void
-  onSelect: (rack: RackSummary) => void
-}
+  onBack: () => void;
+  onSelect: (rack: RackSummary) => void;
+};
 
 export default function RackInfo({ onBack, onSelect }: RackInfoProps) {
   return (
@@ -25,28 +25,49 @@ export default function RackInfo({ onBack, onSelect }: RackInfoProps) {
 
       <div className="rack-list">
         {racks.map((rack) => {
-          const occupiedUnits = getOccupiedUnits(rack)
+          const occupiedUnits = getOccupiedUnits(rack);
           return (
-            <button className="rack-list__card" type="button" key={rack.id} onClick={() => onSelect(rack)}>
-              <span className="rack-list__icon"><img src={rackIcon} alt="" /></span>
+            <button
+              className="rack-list__card"
+              type="button"
+              key={rack.id}
+              onClick={() => onSelect(rack)}
+            >
+              <span className="rack-list__icon">
+                <img src={rackIcon} alt="" />
+              </span>
               <span className="rack-list__content">
                 <span className="rack-list__title">
                   <strong>{rack.name}</strong>
                   <small>{rack.id}</small>
                 </span>
-                <span className="rack-list__location">{rack.location} · {rack.site}</span>
+                <span className="rack-list__location">
+                  {rack.location} · {rack.site}
+                </span>
                 <span className="rack-list__usage">
-                  <span><i style={{ width: `${(occupiedUnits / rack.height) * 100}%` }} /></span>
-                  <small>{occupiedUnits}U ocupadas de {rack.height}U</small>
+                  <span>
+                    <i
+                      style={{
+                        width: `${(occupiedUnits / rack.height) * 100}%`,
+                      }}
+                    />
+                  </span>
+                  <small>
+                    {occupiedUnits}U ocupadas de {rack.height}U
+                  </small>
                 </span>
               </span>
-              <span className="rack-list__arrow" aria-hidden="true">›</span>
+              <span className="rack-list__arrow" aria-hidden="true">
+                ›
+              </span>
             </button>
-          )
+          );
         })}
       </div>
 
-      <button className="rack-list__back" type="button" onClick={onBack}>Voltar</button>
+      <button className="rack-list__back" type="button" onClick={onBack}>
+        Voltar
+      </button>
     </PageShell>
-  )
+  );
 }
