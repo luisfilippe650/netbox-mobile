@@ -1,17 +1,20 @@
 import {
   OrganizationList,
+  type OrganizationCreateInput,
   type OrganizationItem,
 } from "../organization/OrganizationList";
 
 type ManufacturersProps = {
   items: readonly OrganizationItem[];
-  onItemsChange: (items: OrganizationItem[]) => void;
+  onCreate: (input: OrganizationCreateInput) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<void>;
   onBack: () => void;
 };
 
 export default function Manufacturers({
   items,
-  onItemsChange,
+  onCreate,
+  onDelete,
   onBack,
 }: ManufacturersProps) {
   return (
@@ -23,7 +26,8 @@ export default function Manufacturers({
       searchLabel="Fabricantes"
       emptyMessage="Nenhum fabricante encontrado"
       items={items}
-      onItemsChange={onItemsChange}
+      onCreate={onCreate}
+      onDelete={onDelete}
       onBack={onBack}
     />
   );

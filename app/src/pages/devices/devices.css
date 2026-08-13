@@ -367,6 +367,16 @@
   text-align: center;
 }
 
+.devices__error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
 .devices__confirmation-backdrop {
   position: fixed;
   inset: 0;

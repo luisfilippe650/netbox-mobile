@@ -9,7 +9,7 @@ type DevicesProps = {
   onAdd: () => void;
   onSelect: (device: DeviceSummary) => void;
   items: readonly DeviceSummary[];
-  onItemsChange: (items: DeviceSummary[]) => void;
+  onDelete: (ids: number[]) => Promise<void>;
 };
 
 export default function Devices({
@@ -17,12 +17,14 @@ export default function Devices({
   onAdd,
   onSelect,
   items,
-  onItemsChange,
+  onDelete,
 }: DevicesProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [searchBy, setSearchBy] = useState<"name" | "id">("name");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState("");
 
   const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase("pt-BR");
   const filteredItems = items.filter((item) => {
@@ -41,10 +43,18 @@ export default function Devices({
     });
   };
 
-  const deleteSelected = () => {
-    onItemsChange(items.filter((item) => !selectedIds.has(item.id)));
-    setSelectedIds(new Set());
-    setShowDeleteConfirmation(false);
+  const deleteSelected = async () => {
+    setIsDeleting(true);
+    setError("");
+    try {
+      await onDelete(items.filter((item) => selectedIds.has(item.id)).map((item) => item.apiId));
+      setSelectedIds(new Set());
+      setShowDeleteConfirmation(false);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Não foi possível excluir os dispositivos.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -83,6 +93,7 @@ export default function Devices({
           ) : null}
         </div>
       </section>
+      {error ? <p className="devices__error" role="alert">{error}</p> : null}
       <section
         className="devices__search"
         aria-labelledby="devices-search-title"
@@ -171,10 +182,10 @@ export default function Devices({
               <strong>{item.name}</strong>
               <span className="devices__id">ID {item.id}</span>
             </div>
-            <span className="devices__status">Ativo</span>
+            <span className="devices__status">{item.status}</span>
           </div>
           <p className="page-section__text">
-            {item.rack} · U{item.allocatedUnit} · {item.region}
+            {item.rack} · {item.allocatedUnit > 0 ? `U${item.allocatedUnit}` : "Sem posição"} · {item.region}
           </p>
         </article>
       ))}
@@ -221,9 +232,10 @@ export default function Devices({
               <button
                 className="devices__confirm-delete"
                 type="button"
-                onClick={deleteSelected}
+                disabled={isDeleting}
+                onClick={() => void deleteSelected()}
               >
-                Excluir
+                {isDeleting ? "Excluindo…" : "Excluir"}
               </button>
             </div>
           </section>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import QRCode from "qrcode";
 import { PageShell } from "../../components/PageShell/PageShell";
+import type { NetBoxRack } from "../../services/netbox";
 import type { OrganizationItem } from "../organization/OrganizationList";
 import type { DeviceSummary } from "./devices-data";
 import "./object-info.css";
@@ -9,13 +10,15 @@ type ObjectInfoProps = {
   onBack: () => void;
   device: DeviceSummary;
   sites: readonly OrganizationItem[];
-  onUpdate: (device: DeviceSummary) => void;
+  racks: readonly NetBoxRack[];
+  onUpdate: (device: DeviceSummary) => Promise<DeviceSummary>;
 };
 
 export default function ObjectInfo({
   onBack,
   device,
   sites,
+  racks,
   onUpdate,
 }: ObjectInfoProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -24,6 +27,8 @@ export default function ObjectInfo({
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [isGeneratingQrCode, setIsGeneratingQrCode] = useState(false);
   const [qrCodeError, setQrCodeError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const updateField = <K extends keyof DeviceSummary>(
     field: K,
@@ -33,15 +38,20 @@ export default function ObjectInfo({
     setSavedMessage(false);
   };
 
-  const saveChanges = (event: FormEvent<HTMLFormElement>) => {
+  const saveChanges = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onUpdate({
-      ...draft,
-      name: draft.name.trim(),
-      description: draft.description.trim(),
-    });
-    setIsEditing(false);
-    setSavedMessage(true);
+    setIsSaving(true);
+    setSaveError("");
+    try {
+      const updated = await onUpdate({ ...draft, name: draft.name.trim(), description: draft.description.trim() });
+      setDraft(updated);
+      setIsEditing(false);
+      setSavedMessage(true);
+    } catch (saveFailure) {
+      setSaveError(saveFailure instanceof Error ? saveFailure.message : "Não foi possível salvar as alterações.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelEditing = () => {
@@ -127,8 +137,9 @@ export default function ObjectInfo({
           {qrCodeError}
         </p>
       ) : null}
+      {saveError ? <p className="object-info__error" role="alert">{saveError}</p> : null}
 
-      <form className="object-info__form" onSubmit={saveChanges}>
+      <form className="object-info__form" onSubmit={(event) => void saveChanges(event)}>
         <section className="object-info__card">
           <div className="object-info__section-title">
             <h2>Identificação</h2>
@@ -177,12 +188,15 @@ export default function ObjectInfo({
             <span>Site</span>
             <select
               required
-              value={draft.site}
+              value={draft.siteId}
               disabled={!isEditing}
-              onChange={(event) => updateField("site", event.target.value)}
+              onChange={(event) => {
+                const site = sites.find((item) => item.id === event.target.value);
+                if (site) setDraft((current) => ({ ...current, siteId: Number(site.id), site: site.name, locationId: null, region: site.region ?? "Sem local", rackId: null, rack: "Sem rack", allocatedUnit: 0 }));
+              }}
             >
               {sites.map((site) => (
-                <option key={site.id} value={site.name}>
+                <option key={site.id} value={site.id}>
                   {site.name}
                 </option>
               ))}
@@ -193,28 +207,31 @@ export default function ObjectInfo({
             <span>Região</span>
             <input
               value={draft.region}
-              readOnly={!isEditing}
-              onChange={(event) => updateField("region", event.target.value)}
+              readOnly
             />
           </label>
 
           <div className="object-info__field-group">
             <label className="object-info__field">
               <span>Rack</span>
-              <input
-                value={draft.rack}
-                readOnly={!isEditing}
-                onChange={(event) => updateField("rack", event.target.value)}
-              />
+              <select value={draft.rackId ?? ""} disabled={!isEditing} onChange={(event) => {
+                const rack = racks.find((item) => item.id === Number(event.target.value));
+                setDraft((current) => ({ ...current, rackId: rack?.id ?? null, rack: rack?.name ?? "Sem rack", allocatedUnit: rack ? current.allocatedUnit : 0 }));
+              }}>
+                <option value="">Sem rack</option>
+                {racks.filter((rack) => rack.site.id === draft.siteId).map((rack) => <option key={rack.id} value={rack.id}>{rack.name}</option>)}
+              </select>
             </label>
             <label className="object-info__field">
               <span>U alocado</span>
               <input
                 type="number"
-                min="1"
-                required
-                value={draft.allocatedUnit}
+                min="0.5"
+                max="999.5"
+                step="0.5"
+                value={draft.allocatedUnit || ""}
                 readOnly={!isEditing}
+                disabled={draft.rackId === null}
                 onChange={(event) =>
                   updateField("allocatedUnit", Number(event.target.value))
                 }
@@ -224,8 +241,8 @@ export default function ObjectInfo({
         </section>
 
         {isEditing ? (
-          <button className="object-info__save" type="submit">
-            Salvar alterações
+          <button className="object-info__save" type="submit" disabled={isSaving}>
+            {isSaving ? "Salvando…" : "Salvar alterações"}
           </button>
         ) : null}
       </form>

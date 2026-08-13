@@ -178,6 +178,9 @@
   font-weight: 800;
   cursor: pointer;
 }
+
+.add-device-type__error { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fee2e2; color: #991b1b; font-size: .78rem; font-weight: 700; }
+.add-device-type__save:disabled { opacity: .65; cursor: wait; }
 .add-device-type__save {
   border: 0;
   background: var(--primary-color);

@@ -1084,6 +1084,8 @@
   background: #b91c1c;
   color: white;
 }
+
+.home__delete-error { display: block; color: #991b1b; font-size: .74rem; font-weight: 700; }
 .home__delete-message {
   border-color: #a7f3d0;
   background: #f0fdf4;

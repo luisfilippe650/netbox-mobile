@@ -5,11 +5,13 @@ import "../../utils/colors.css";
 import "./login.css";
 
 type LoginProps = {
-  onLogin: () => void;
+  onLogin: (username: string, password: string) => Promise<void>;
 };
 
 export default function Login({ onLogin }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   return (
     <main className="login-page">
@@ -37,20 +39,28 @@ export default function Login({ onLogin }: LoginProps) {
 
           <form
             className="login-form"
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
-              onLogin();
+              setIsSubmitting(true);
+              setError("");
+              const data = new FormData(event.currentTarget);
+              try {
+                await onLogin(String(data.get("username") ?? ""), String(data.get("password") ?? ""));
+              } catch (loginError) {
+                setError(loginError instanceof Error ? loginError.message : "Não foi possível entrar no NetBox.");
+              } finally {
+                setIsSubmitting(false);
+              }
             }}
           >
             <div className="login-field">
-              <label htmlFor="email">E-mail</label>
+              <label htmlFor="username">Usuário do NetBox</label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="Digite seu e-mail"
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                placeholder="Digite seu usuário"
                 required
               />
             </div>
@@ -78,8 +88,10 @@ export default function Login({ onLogin }: LoginProps) {
               </div>
             </div>
 
-            <button className="login-submit" type="submit">
-              Entrar
+            {error ? <p className="login-error" role="alert">{error}</p> : null}
+
+            <button className="login-submit" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Conectando…" : "Entrar"}
             </button>
           </form>
 

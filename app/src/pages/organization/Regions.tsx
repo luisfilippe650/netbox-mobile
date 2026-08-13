@@ -1,41 +1,18 @@
-import { OrganizationList, type OrganizationItem } from "./OrganizationList";
+import { OrganizationList, type OrganizationCreateInput, type OrganizationItem } from "./OrganizationList";
 
 type RegionsProps = {
   onBack: () => void;
+  items: readonly OrganizationItem[];
+  onCreate: (input: OrganizationCreateInput) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<void>;
 };
 
-const regions: readonly OrganizationItem[] = [
-  {
-    id: "REG-01",
-    name: "Sala A",
-    description: "Datacenter Principal",
-    detail: "4 racks vinculados",
-  },
-  {
-    id: "REG-02",
-    name: "Sala B",
-    description: "Datacenter Principal",
-    detail: "3 racks vinculados",
-  },
-  {
-    id: "REG-03",
-    name: "Área de Rede",
-    description: "Sala de Telecomunicações",
-    detail: "2 racks vinculados",
-  },
-];
-
-export default function Regions({ onBack }: RegionsProps) {
+export default function Regions({ onBack, items, onCreate, onDelete }: RegionsProps) {
   return (
-    <OrganizationList
-      singular="Região"
-      title="Regiões"
+    <OrganizationList singular="Região" title="Regiões"
       subtitle="Consulte as regiões e seus vínculos com os racks."
-      sectionTitle="Regiões cadastradas"
-      searchLabel="Regiões"
-      emptyMessage="Nenhuma região encontrada"
-      items={regions}
-      onBack={onBack}
-    />
+      sectionTitle="Regiões cadastradas" searchLabel="Regiões"
+      emptyMessage="Nenhuma região encontrada" items={items}
+      onCreate={onCreate} onDelete={onDelete} onBack={onBack} />
   );
 }

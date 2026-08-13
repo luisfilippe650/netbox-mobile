@@ -8,9 +8,20 @@ export type OrganizationItem = {
   description: string;
   detail: string;
   region?: string;
+  regionId?: number | null;
   tenant?: string;
   timezone?: string;
   site?: string;
+  siteId?: number;
+  vmRole?: boolean;
+  color?: string;
+};
+
+export type OrganizationCreateInput = {
+  name: string;
+  description: string;
+  siteId?: number;
+  regionId?: number;
   vmRole?: boolean;
   color?: string;
 };
@@ -24,7 +35,9 @@ type OrganizationListProps = {
   emptyMessage: string;
   items: readonly OrganizationItem[];
   siteOptions?: readonly OrganizationItem[];
-  onItemsChange?: (items: OrganizationItem[]) => void;
+  regionOptions?: readonly OrganizationItem[];
+  onCreate: (input: OrganizationCreateInput) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<void>;
   onBack: () => void;
 };
 
@@ -37,11 +50,12 @@ export function OrganizationList({
   emptyMessage,
   items,
   siteOptions = [],
-  onItemsChange,
+  regionOptions = [],
+  onCreate,
+  onDelete,
   onBack,
 }: OrganizationListProps) {
   const [query, setQuery] = useState("");
-  const [localItems, setLocalItems] = useState<OrganizationItem[]>([...items]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -53,18 +67,13 @@ export function OrganizationList({
   const [newSite, setNewSite] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newVmRole, setNewVmRole] = useState("false");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const isSitePage = singular === "Site";
   const isLocationPage = singular === "Local";
   const isDeviceFunctionPage = singular === "Função de dispositivo";
   const hasDetails = isSitePage || isLocationPage;
-  const organizationItems = onItemsChange ? items : localItems;
-
-  const updateItems = (
-    update: (current: readonly OrganizationItem[]) => OrganizationItem[],
-  ) => {
-    if (onItemsChange) onItemsChange(update(items));
-    else setLocalItems(update);
-  };
+  const organizationItems = items;
 
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
@@ -86,55 +95,38 @@ export function OrganizationList({
     });
   };
 
-  const deleteSelected = () => {
-    updateItems((current) =>
-      current.filter((item) => !selectedIds.has(item.id)),
-    );
-    setSelectedIds(new Set());
-    setShowDeleteConfirmation(false);
+  const deleteSelected = async () => {
+    setIsSubmitting(true);
+    setError("");
+    try {
+      await onDelete([...selectedIds].map(Number));
+      setSelectedIds(new Set());
+      setShowDeleteConfirmation(false);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Não foi possível excluir os itens.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const addItem = (event: FormEvent<HTMLFormElement>) => {
+  const addItem = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextNumber =
-      organizationItems.reduce((largest, item) => {
-        const number = Number(item.id.match(/\d+$/)?.[0] ?? 0);
-        return Math.max(largest, number);
-      }, 0) + 1;
-    const prefix =
-      items[0]?.id.split("-")[0] ??
-      singular.slice(0, 3).toLocaleUpperCase("pt-BR");
-
-    updateItems((current) => [
-      ...current,
-      {
-        id: `${prefix}-${String(nextNumber).padStart(2, "0")}`,
-        name: newName.trim(),
-        description: newDescription.trim() || `${singular} cadastrado`,
-        detail: "Nenhum vínculo cadastrado",
-        ...(isSitePage
-          ? {
-              region: newRegion.trim() || "Não informada",
-              tenant: "Não informado",
-              timezone: "America/Sao_Paulo",
-            }
-          : {}),
-        ...(isLocationPage ? { site: newSite } : {}),
-        ...(isDeviceFunctionPage
-          ? {
-              vmRole: newVmRole === "true",
-              color: "Cinza",
-              detail: `Função da VM: ${newVmRole === "true" ? "Sim" : "Não"} · Cor: Cinza`,
-            }
-          : {}),
-      },
-    ]);
-    setNewName("");
-    setNewRegion("");
-    setNewSite("");
-    setNewDescription("");
-    setNewVmRole("false");
-    setShowAddForm(false);
+    setIsSubmitting(true);
+    setError("");
+    try {
+      await onCreate({
+        name: newName.trim(), description: newDescription.trim(),
+        ...(isSitePage && newRegion ? { regionId: Number(newRegion) } : {}),
+        ...(isLocationPage ? { siteId: Number(newSite) } : {}),
+        ...(isDeviceFunctionPage ? { vmRole: newVmRole === "true", color: "9e9e9e" } : {}),
+      });
+      setNewName(""); setNewRegion(""); setNewSite(""); setNewDescription("");
+      setNewVmRole("false"); setShowAddForm(false);
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Não foi possível criar o item.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -154,6 +146,7 @@ export function OrganizationList({
           placeholder={`Buscar ${searchLabel.toLocaleLowerCase("pt-BR")}`}
         />
       </label>
+      {error ? <p className="organization__error" role="alert">{error}</p> : null}
 
       <section
         className="organization__heading"
@@ -260,6 +253,7 @@ export function OrganizationList({
             </span>
             <h2>Adicionar {singular.toLocaleLowerCase("pt-BR")}</h2>
             <p>Preencha as informações do novo cadastro.</p>
+            {error ? <p className="organization__error" role="alert">{error}</p> : null}
             {isLocationPage ? (
               <label>
                 <span>Site</span>
@@ -270,7 +264,7 @@ export function OrganizationList({
                 >
                   <option value="">Selecione um site</option>
                   {siteOptions.map((site) => (
-                    <option key={site.id} value={site.name}>
+                    <option key={site.id} value={site.id}>
                       {site.name}
                     </option>
                   ))}
@@ -290,11 +284,13 @@ export function OrganizationList({
             {isSitePage ? (
               <label>
                 <span>Região</span>
-                <input
+                <select
                   value={newRegion}
                   onChange={(event) => setNewRegion(event.target.value)}
-                  placeholder="Região do site"
-                />
+                >
+                  <option value="">Sem região</option>
+                  {regionOptions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
+                </select>
               </label>
             ) : null}
             {isDeviceFunctionPage ? (
@@ -327,8 +323,8 @@ export function OrganizationList({
               <button type="button" onClick={() => setShowAddForm(false)}>
                 Cancelar
               </button>
-              <button className="organization__confirm-add" type="submit">
-                Adicionar
+              <button className="organization__confirm-add" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Salvando…" : "Adicionar"}
               </button>
             </div>
           </form>
@@ -437,9 +433,10 @@ export function OrganizationList({
               <button
                 className="organization__confirm-delete"
                 type="button"
-                onClick={deleteSelected}
+                disabled={isSubmitting}
+                onClick={() => void deleteSelected()}
               >
-                Excluir
+                {isSubmitting ? "Excluindo…" : "Excluir"}
               </button>
             </div>
           </section>

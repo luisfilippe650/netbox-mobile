@@ -7,13 +7,18 @@ import rackIcon from "../../assets/icons/criar_rack.png";
 import rowIcon from "../../assets/icons/row_icone.png";
 import coidsLogo from "../../assets/logos/logo-coids.png";
 import inpeLogo from "../../assets/logos/Logo_INPE_maior.jpg";
+import type { NetBoxDeviceType, NetBoxRack, NetBoxRackGroup } from "../../services/netbox";
 import type { DeviceSummary } from "../devices/devices-data";
 import "./home.css";
 
 type HomeProps = {
   onLogout: () => void;
   devices: readonly DeviceSummary[];
+  deviceTypes: readonly NetBoxDeviceType[];
+  racks: readonly NetBoxRack[];
+  rackGroups: readonly NetBoxRackGroup[];
   onSelectDevice: (device: DeviceSummary) => void;
+  onDelete: (kind: DeleteKind, id: number) => Promise<void>;
   onOpenPage: (
     page:
       | "scanner"
@@ -66,19 +71,7 @@ type ActionOption = {
   tone?: "success" | "danger";
 };
 
-type DeleteKind = "device" | "device-type";
-
-const devicesForDeletion = [
-  "Servidor principal",
-  "Switch core",
-  "UPS",
-] as const;
-const deviceTypesForDeletion = [
-  "Servidor",
-  "Switch",
-  "Roteador",
-  "Storage",
-] as const;
+export type DeleteKind = "device" | "device-type" | "rack" | "rack-group";
 
 const actions: readonly HomeAction[] = [
   {
@@ -136,7 +129,11 @@ const organizationOptions: readonly ActionOption[] = [
 export default function Home({
   onLogout,
   devices,
+  deviceTypes,
+  racks,
+  rackGroups,
   onSelectDevice,
+  onDelete,
   onOpenPage,
 }: HomeProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -149,6 +146,8 @@ export default function Home({
   const [deleteMessage, setDeleteMessage] = useState("");
   const [deviceSearchBy, setDeviceSearchBy] = useState<"name" | "id">("name");
   const [deviceSearchTerm, setDeviceSearchTerm] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const normalizedDeviceSearch = deviceSearchTerm
     .trim()
@@ -161,6 +160,16 @@ export default function Home({
           .includes(normalizedDeviceSearch);
       })
     : [];
+  const deleteOptions = deleteKind === "device"
+    ? devices.map((item) => ({ id: item.apiId, label: item.name }))
+    : deleteKind === "device-type"
+      ? deviceTypes.map((item) => ({ id: item.id, label: item.model }))
+      : deleteKind === "rack"
+        ? racks.map((item) => ({ id: item.id, label: item.name }))
+        : deleteKind === "rack-group"
+          ? rackGroups.map((item) => ({ id: item.id, label: item.name ?? item.display }))
+          : [];
+  const deleteSelectionLabel = deleteOptions.find((item) => String(item.id) === deleteSelection)?.label ?? "";
 
   const openActionOptions = (action: HomeAction) => {
     setSelectedAction(action);
@@ -172,6 +181,7 @@ export default function Home({
     setDeleteSelection("");
     setConfirmDelete(false);
     setDeleteMessage("");
+    setDeleteError("");
     setDeviceSearchBy("name");
     setDeviceSearchTerm("");
   };
@@ -181,13 +191,18 @@ export default function Home({
     setDeleteSelection("");
     setConfirmDelete(false);
     setDeleteMessage("");
+    setDeleteError("");
   };
 
-  const finishDeletion = () => {
-    setConfirmDelete(false);
-    setDeleteMessage(
-      `${deleteKind === "device" ? "Dispositivo" : "Tipo de dispositivo"} excluído com sucesso.`,
-    );
+  const finishDeletion = async () => {
+    if (!deleteKind || !deleteSelection) return;
+    setIsDeleting(true); setDeleteError("");
+    try {
+      await onDelete(deleteKind, Number(deleteSelection));
+      setConfirmDelete(false); setDeleteMessage("Item excluído com sucesso.");
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Não foi possível excluir o item.");
+    } finally { setIsDeleting(false); }
   };
 
   return (
@@ -514,7 +529,8 @@ export default function Home({
                     <strong id="home-delete-title">
                       Tem certeza que deseja excluir?
                     </strong>
-                    <span>{deleteSelection}</span>
+                    <span>{deleteSelectionLabel}</span>
+                    {deleteError ? <small className="home__delete-error" role="alert">{deleteError}</small> : null}
                     <div>
                       <button
                         type="button"
@@ -525,9 +541,10 @@ export default function Home({
                       <button
                         className="home__delete-confirm"
                         type="button"
-                        onClick={finishDeletion}
+                        disabled={isDeleting}
+                        onClick={() => void finishDeletion()}
                       >
-                        Excluir
+                        {isDeleting ? "Excluindo…" : "Excluir"}
                       </button>
                     </div>
                   </div>
@@ -535,9 +552,7 @@ export default function Home({
                   <>
                     <label className="home__delete-select">
                       <span>
-                        {deleteKind === "device"
-                          ? "Selecione o dispositivo"
-                          : "Selecione o tipo de dispositivo"}
+                        Selecione o item
                       </span>
                       <select
                         value={deleteSelection}
@@ -546,12 +561,9 @@ export default function Home({
                         }
                       >
                         <option value="">Selecione uma opção</option>
-                        {(deleteKind === "device"
-                          ? devicesForDeletion
-                          : deviceTypesForDeletion
-                        ).map((item) => (
-                          <option key={item} value={item}>
-                            {item}
+                        {deleteOptions.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.label}
                           </option>
                         ))}
                       </select>
@@ -681,6 +693,14 @@ export default function Home({
                             option.label === "Deletar tipos de dispositivos"
                           ) {
                             openDeleteSelection("device-type");
+                            return;
+                          }
+                          if (option.label === "Deletar rack") {
+                            openDeleteSelection("rack");
+                            return;
+                          }
+                          if (option.label === "Deletar grupo de rack") {
+                            openDeleteSelection("rack-group");
                             return;
                           }
                           if (option.page) onOpenPage(option.page);

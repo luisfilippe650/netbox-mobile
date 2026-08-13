@@ -268,6 +268,19 @@
     box-shadow 160ms ease;
 }
 
+.login-submit:disabled { opacity: .65; cursor: wait; }
+
+.login-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: .78rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
 .login-submit:hover {
   filter: brightness(1.08);
   box-shadow: 0 12px 22px rgba(11, 86, 197, 0.28);

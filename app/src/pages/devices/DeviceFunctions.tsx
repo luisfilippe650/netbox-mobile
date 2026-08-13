@@ -1,17 +1,20 @@
 import {
   OrganizationList,
+  type OrganizationCreateInput,
   type OrganizationItem,
 } from "../organization/OrganizationList";
 
 type DeviceFunctionsProps = {
   items: readonly OrganizationItem[];
-  onItemsChange: (items: OrganizationItem[]) => void;
+  onCreate: (input: OrganizationCreateInput) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<void>;
   onBack: () => void;
 };
 
 export default function DeviceFunctions({
   items,
-  onItemsChange,
+  onCreate,
+  onDelete,
   onBack,
 }: DeviceFunctionsProps) {
   return (
@@ -23,7 +26,8 @@ export default function DeviceFunctions({
       searchLabel="Funções"
       emptyMessage="Nenhuma função de dispositivo encontrada"
       items={items}
-      onItemsChange={onItemsChange}
+      onCreate={onCreate}
+      onDelete={onDelete}
       onBack={onBack}
     />
   );

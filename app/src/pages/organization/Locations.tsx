@@ -1,17 +1,19 @@
-import { OrganizationList, type OrganizationItem } from "./OrganizationList";
+import { OrganizationList, type OrganizationCreateInput, type OrganizationItem } from "./OrganizationList";
 
 type LocationsProps = {
   onBack: () => void;
   items: readonly OrganizationItem[];
   sites: readonly OrganizationItem[];
-  onItemsChange: (items: OrganizationItem[]) => void;
+  onCreate: (input: OrganizationCreateInput) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<void>;
 };
 
 export default function Locations({
   onBack,
   items,
   sites,
-  onItemsChange,
+  onCreate,
+  onDelete,
 }: LocationsProps) {
   return (
     <OrganizationList
@@ -23,7 +25,8 @@ export default function Locations({
       emptyMessage="Nenhum local encontrado"
       items={items}
       siteOptions={sites}
-      onItemsChange={onItemsChange}
+      onCreate={onCreate}
+      onDelete={onDelete}
       onBack={onBack}
     />
   );

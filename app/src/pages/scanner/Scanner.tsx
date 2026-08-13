@@ -5,11 +5,12 @@ import "./scanner.css";
 
 type ScannerProps = {
   onBack: () => void;
+  onOpenDevice: (id: string) => void;
 };
 
 type ScannerStatus = "ready" | "starting" | "scanning" | "result" | "error";
 
-export default function Scanner({ onBack }: ScannerProps) {
+export default function Scanner({ onBack, onOpenDevice }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -178,6 +179,9 @@ export default function Scanner({ onBack }: ScannerProps) {
               ✓ QR code identificado
             </span>
             <strong>{result}</strong>
+            <button className="page-button" type="button" onClick={() => onOpenDevice(result.trim())}>
+              Abrir dispositivo
+            </button>
             <button className="page-button" type="button" onClick={scanAgain}>
               Escanear novamente
             </button>

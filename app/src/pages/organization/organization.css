@@ -275,6 +275,8 @@
   text-align: center;
 }
 
+.organization__error { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fee2e2; color: #991b1b; font-size: .78rem; font-weight: 700; }
+
 .organization__empty span {
   font-size: 2rem;
 }

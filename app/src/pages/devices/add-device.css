@@ -141,6 +141,9 @@
   cursor: pointer;
 }
 
+.add-device__error { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fee2e2; color: #991b1b; font-size: .78rem; font-weight: 700; }
+.add-device__save:disabled { opacity: .65; cursor: wait; }
+
 .add-device__back {
   border: 1px solid var(--border-color);
   background: var(--surface-color);

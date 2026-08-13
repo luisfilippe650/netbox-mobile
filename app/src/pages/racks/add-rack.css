@@ -112,6 +112,9 @@
   font-weight: 800;
   cursor: pointer;
 }
+
+.add-rack__error { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fee2e2; color: #991b1b; font-size: .78rem; font-weight: 700; }
+.add-rack__save:disabled { opacity: .65; cursor: wait; }
 .add-rack__back {
   border: 1px solid var(--border-color);
   background: var(--surface-color);

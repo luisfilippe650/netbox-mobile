@@ -1,12 +1,14 @@
-import { OrganizationList, type OrganizationItem } from "./OrganizationList";
+import { OrganizationList, type OrganizationCreateInput, type OrganizationItem } from "./OrganizationList";
 
 type SitesProps = {
   onBack: () => void;
   items: readonly OrganizationItem[];
-  onItemsChange: (items: OrganizationItem[]) => void;
+  regions: readonly OrganizationItem[];
+  onCreate: (input: OrganizationCreateInput) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<void>;
 };
 
-export default function Sites({ onBack, items, onItemsChange }: SitesProps) {
+export default function Sites({ onBack, items, regions, onCreate, onDelete }: SitesProps) {
   return (
     <OrganizationList
       singular="Site"
@@ -16,7 +18,9 @@ export default function Sites({ onBack, items, onItemsChange }: SitesProps) {
       searchLabel="Sites"
       emptyMessage="Nenhum site encontrado"
       items={items}
-      onItemsChange={onItemsChange}
+      regionOptions={regions}
+      onCreate={onCreate}
+      onDelete={onDelete}
       onBack={onBack}
     />
   );

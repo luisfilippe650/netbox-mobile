@@ -1,14 +1,15 @@
 import { PageShell } from "../../components/PageShell/PageShell";
 import rackIcon from "../../assets/icons/rack_medio.png";
-import { getOccupiedUnits, racks, type RackSummary } from "../racks/data";
+import { getOccupiedUnits, type RackSummary } from "../racks/data";
 import "./rack-info.css";
 
 type RackInfoProps = {
   onBack: () => void;
   onSelect: (rack: RackSummary) => void;
+  items: readonly RackSummary[];
 };
 
-export default function RackInfo({ onBack, onSelect }: RackInfoProps) {
+export default function RackInfo({ onBack, onSelect, items }: RackInfoProps) {
   return (
     <PageShell
       className="rack-list-page"
@@ -19,12 +20,12 @@ export default function RackInfo({ onBack, onSelect }: RackInfoProps) {
       <section className="rack-list__heading">
         <div>
           <h2>Racks cadastrados</h2>
-          <p>{racks.length} racks encontrados</p>
+          <p>{items.length} racks encontrados</p>
         </div>
       </section>
 
       <div className="rack-list">
-        {racks.map((rack) => {
+        {items.map((rack) => {
           const occupiedUnits = getOccupiedUnits(rack);
           return (
             <button
@@ -64,6 +65,7 @@ export default function RackInfo({ onBack, onSelect }: RackInfoProps) {
           );
         })}
       </div>
+      {items.length === 0 ? <p className="rack-list__empty">Nenhum rack cadastrado no NetBox.</p> : null}
 
       <button className="rack-list__back" type="button" onClick={onBack}>
         Voltar

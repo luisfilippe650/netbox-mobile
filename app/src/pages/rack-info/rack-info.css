@@ -126,3 +126,4 @@
   font-weight: 800;
   cursor: pointer;
 }
+.rack-list__empty { margin: 14px 0; color: var(--secondary-font-color); text-align: center; }
