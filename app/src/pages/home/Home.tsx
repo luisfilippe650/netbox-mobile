@@ -7,25 +7,24 @@ import rackIcon from "../../assets/icons/criar_rack.png";
 import rowIcon from "../../assets/icons/row_icone.png";
 import coidsLogo from "../../assets/logos/logo-coids.png";
 import inpeLogo from "../../assets/logos/Logo_INPE_maior.jpg";
+import type { DeviceSummary } from "../devices/devices-data";
 import "./home.css";
 
 type HomeProps = {
   onLogout: () => void;
+  devices: readonly DeviceSummary[];
+  onSelectDevice: (device: DeviceSummary) => void;
   onOpenPage: (
     page:
       | "scanner"
-      | "object-info"
       | "devices"
       | "add-device"
       | "add-device-type"
       | "manufacturers"
       | "device-functions"
-      | "device"
       | "rack-info"
       | "add-rack"
       | "add-rack-group"
-      | "row-info"
-      | "location-info"
       | "sites"
       | "locations"
       | "regions",
@@ -52,12 +51,11 @@ type HomePage =
   | "add-rack"
   | "add-rack-group"
   | "organizacao"
-  | "location-info"
   | "sites"
   | "locations"
   | "regions";
 
-type NavigableHomePage = Exclude<HomePage, "organizacao">;
+type NavigableHomePage = Exclude<HomePage, "organizacao" | "object-info" | "device">;
 
 type ActionOption = {
   label: string;
@@ -115,7 +113,7 @@ const organizationOptions: readonly ActionOption[] = [
   { label: "Regiões", page: "regions" },
 ];
 
-export default function Home({ onLogout, onOpenPage }: HomeProps) {
+export default function Home({ onLogout, devices, onSelectDevice, onOpenPage }: HomeProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -124,6 +122,16 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
   const [deleteSelection, setDeleteSelection] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState("");
+  const [deviceSearchBy, setDeviceSearchBy] = useState<"name" | "id">("name");
+  const [deviceSearchTerm, setDeviceSearchTerm] = useState("");
+
+  const normalizedDeviceSearch = deviceSearchTerm.trim().toLocaleLowerCase("pt-BR");
+  const deviceSearchResults = normalizedDeviceSearch
+    ? devices.filter((device) => {
+        const value = deviceSearchBy === "id" ? device.id : device.name;
+        return value.toLocaleLowerCase("pt-BR").includes(normalizedDeviceSearch);
+      })
+    : [];
 
   const openActionOptions = (action: HomeAction) => {
     setSelectedAction(action);
@@ -135,6 +143,8 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
     setDeleteSelection("");
     setConfirmDelete(false);
     setDeleteMessage("");
+    setDeviceSearchBy("name");
+    setDeviceSearchTerm("");
   };
 
   const openDeleteSelection = (kind: DeleteKind) => {
@@ -220,8 +230,8 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
             onClick={() =>
               openActionOptions({
                 key: "object-info",
-                title: "Buscar Dispositivos",
-                text: "Consulte detalhes",
+                title: "Buscar dispositivo",
+                text: "Pesquise pelo nome ou ID",
                 icon: searchIcon,
               })
             }
@@ -394,7 +404,7 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
           }}
         >
           <section
-            className="home__modal"
+            className={`home__modal${selectedAction.key === "object-info" ? " home__modal--device-search" : ""}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="home-action-title"
@@ -409,7 +419,7 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
               ×
             </button>
             <span
-              className={`home__modal-icon home__modal-icon--contained${selectedAction.key === "location-info" ? " home__modal-icon--connections" : ""}`}
+              className="home__modal-icon home__modal-icon--contained"
             >
               <img src={selectedAction.icon} alt="" />
             </span>
@@ -450,6 +460,61 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
                   </>
                 )}
               </div>
+            ) : selectedAction.key === "object-info" ? (
+              <div className="home__device-search">
+                <div className="home__device-search-modes" role="group" aria-label="Pesquisar dispositivo por">
+                  <button
+                    className={deviceSearchBy === "name" ? "home__device-search-mode home__device-search-mode--active" : "home__device-search-mode"}
+                    type="button"
+                    aria-pressed={deviceSearchBy === "name"}
+                    onClick={() => {
+                      setDeviceSearchBy("name");
+                      setDeviceSearchTerm("");
+                    }}
+                  >
+                    Nome
+                  </button>
+                  <button
+                    className={deviceSearchBy === "id" ? "home__device-search-mode home__device-search-mode--active" : "home__device-search-mode"}
+                    type="button"
+                    aria-pressed={deviceSearchBy === "id"}
+                    onClick={() => {
+                      setDeviceSearchBy("id");
+                      setDeviceSearchTerm("");
+                    }}
+                  >
+                    ID
+                  </button>
+                </div>
+                <label className="home__device-search-field">
+                  <span>{deviceSearchBy === "id" ? "ID" : "Nome"}</span>
+                  <input
+                    type="search"
+                    inputMode={deviceSearchBy === "id" ? "numeric" : "search"}
+                    autoFocus
+                    value={deviceSearchTerm}
+                    onChange={(event) => setDeviceSearchTerm(event.target.value)}
+                    placeholder={deviceSearchBy === "id" ? "Digite o ID" : "Digite o nome"}
+                  />
+                </label>
+                {normalizedDeviceSearch ? (
+                  <div className="home__device-search-results" aria-live="polite">
+                    {deviceSearchResults.length > 0 ? deviceSearchResults.map((device) => (
+                      <button
+                        type="button"
+                        key={device.id}
+                        onClick={() => {
+                          onSelectDevice(device);
+                          closeActionOptions();
+                        }}
+                      >
+                        <strong>{deviceSearchBy === "id" ? `ID ${device.id}` : device.name}</strong>
+                        <small>{deviceSearchBy === "id" ? device.name : `ID ${device.id}`}</small>
+                      </button>
+                    )) : <p>Nenhum dispositivo encontrado.</p>}
+                  </div>
+                ) : null}
+              </div>
             ) : <div className="home__modal-actions">
               {selectedAction.key === "device" ||
               selectedAction.key === "rack-info" ||
@@ -480,20 +545,7 @@ export default function Home({ onLogout, onOpenPage }: HomeProps) {
                     {option.label}
                   </button>
                 ))
-              ) : (
-                <button
-                  className="home__modal-option home__modal-option--primary"
-                  type="button"
-                  onClick={() => {
-                    if (selectedAction.key !== "organizacao") {
-                      onOpenPage(selectedAction.key);
-                    }
-                    closeActionOptions();
-                  }}
-                >
-                  Abrir {selectedAction.title}
-                </button>
-              )}
+              ) : null}
             </div>}
           </section>
         </div>

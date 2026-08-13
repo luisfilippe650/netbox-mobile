@@ -15,6 +15,16 @@ type DevicesProps = {
 export default function Devices({ onBack, onAdd, onSelect, items, onItemsChange }: DevicesProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+  const [searchBy, setSearchBy] = useState<'name' | 'id'>('name')
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase('pt-BR')
+  const filteredItems = items.filter((item) => {
+    if (!normalizedSearchTerm) return true
+
+    const value = searchBy === 'id' ? item.id : item.name
+    return value.toLocaleLowerCase('pt-BR').includes(normalizedSearchTerm)
+  })
 
   const toggleSelection = (id: string) => {
     setSelectedIds((current) => {
@@ -50,7 +60,45 @@ export default function Devices({ onBack, onAdd, onSelect, items, onItemsChange 
           ) : null}
         </div>
       </section>
-      {items.map((item) => (
+      <section className="devices__search" aria-labelledby="devices-search-title">
+        <div className="devices__search-heading">
+          <div>
+            <h2 id="devices-search-title">Buscar dispositivo</h2>
+            <p>Escolha como deseja pesquisar.</p>
+          </div>
+          {normalizedSearchTerm ? <span>{filteredItems.length} resultado(s)</span> : null}
+        </div>
+        <div className="devices__search-modes" role="group" aria-label="Pesquisar dispositivo por">
+          <button
+            className={searchBy === 'name' ? 'devices__search-mode devices__search-mode--active' : 'devices__search-mode'}
+            type="button"
+            aria-pressed={searchBy === 'name'}
+            onClick={() => setSearchBy('name')}
+          >
+            Nome
+          </button>
+          <button
+            className={searchBy === 'id' ? 'devices__search-mode devices__search-mode--active' : 'devices__search-mode'}
+            type="button"
+            aria-pressed={searchBy === 'id'}
+            onClick={() => setSearchBy('id')}
+          >
+            ID
+          </button>
+        </div>
+        <label className="devices__search-field">
+          <span className="devices__search-icon" aria-hidden="true" />
+          <span className="devices__search-label">{searchBy === 'id' ? 'ID do dispositivo' : 'Nome do dispositivo'}</span>
+          <input
+            type="search"
+            inputMode={searchBy === 'id' ? 'numeric' : 'search'}
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder={searchBy === 'id' ? 'Digite o ID' : 'Digite o nome'}
+          />
+        </label>
+      </section>
+      {filteredItems.map((item) => (
         <article
           key={item.id}
           className="page-card devices__card"
@@ -77,6 +125,9 @@ export default function Devices({ onBack, onAdd, onSelect, items, onItemsChange 
         </article>
       ))}
       {items.length === 0 ? <p className="devices__empty">Nenhum dispositivo cadastrado.</p> : null}
+      {items.length > 0 && filteredItems.length === 0 ? (
+        <p className="devices__empty">Nenhum dispositivo encontrado por {searchBy === 'id' ? 'esse ID' : 'esse nome'}.</p>
+      ) : null}
       <button className="page-button page-button--secondary" type="button" onClick={onBack}>
         Voltar
       </button>

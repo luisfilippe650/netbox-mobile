@@ -17,8 +17,6 @@ import AddRackPage from './pages/racks/AddRack'
 import AddRackGroupPage from './pages/racks/AddRackGroup'
 import RackDetailsPage from './pages/racks/RackDetails'
 import type { RackSummary } from './pages/racks/data'
-import RowInfoPage from './pages/row-info/RowInfo'
-import LocationInfoPage from './pages/location-info/LocationInfo'
 import SitesPage from './pages/organization/Sites'
 import LocationsPage from './pages/organization/Locations'
 import RegionsPage from './pages/organization/Regions'
@@ -36,13 +34,10 @@ type Page =
   | 'add-device-type'
   | 'manufacturers'
   | 'device-functions'
-  | 'device'
   | 'rack-info'
   | 'rack-details'
   | 'add-rack'
   | 'add-rack-group'
-  | 'row-info'
-  | 'location-info'
   | 'sites'
   | 'locations'
   | 'regions'
@@ -65,6 +60,11 @@ function App() {
     return (
       <Home
         onLogout={() => setPage('login')}
+        devices={devices}
+        onSelectDevice={(device) => {
+          setSelectedDevice(device)
+          setPage('object-info')
+        }}
         onOpenPage={(nextPage) => setPage(nextPage)}
       />
     )
@@ -89,7 +89,7 @@ function App() {
     )
   }
 
-  if (page === 'devices' || page === 'device') {
+  if (page === 'devices') {
     return <DevicesPage items={devices} onItemsChange={setDevices} onBack={() => setPage('home')} onAdd={() => setPage('add-device')} onSelect={(device) => { setSelectedDevice(device); setPage('object-info') }} />
   }
 
@@ -125,10 +125,6 @@ function App() {
     return <AddRackGroupPage onBack={() => setPage('home')} />
   }
 
-  if (page === 'row-info') {
-    return <RowInfoPage onBack={() => setPage('home')} />
-  }
-
   if (page === 'sites') {
     return <SitesPage items={sites} onItemsChange={setSites} onBack={() => setPage('home')} />
   }
@@ -141,7 +137,7 @@ function App() {
     return <RegionsPage onBack={() => setPage('home')} />
   }
 
-  return <LocationInfoPage onBack={() => setPage('home')} />
+  return null
 }
 
 createRoot(document.getElementById('root')!).render(

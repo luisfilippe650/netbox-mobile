@@ -755,11 +755,6 @@
   transform: translate(-50%, -50%);
 }
 
-.home__modal-icon--connections img {
-  width: 68px;
-  height: 68px;
-}
-
 .home__modal h2 {
   margin: 0;
   color: var(--font-color);
@@ -774,11 +769,158 @@
   font-size: 0.9rem;
 }
 
+.home__modal--device-search h2 {
+  font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1.42rem;
+  font-weight: 750;
+  letter-spacing: -.025em;
+  line-height: 1.2;
+}
+
+.home__modal--device-search > p {
+  margin: 7px auto 22px;
+  font-family: "Segoe UI Variable", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: .86rem;
+  font-weight: 450;
+  line-height: 1.45;
+}
+
 .home__modal-actions {
   display: grid;
   gap: 9px;
   width: min(100%, 360px);
   margin: 0 auto;
+}
+
+.home__device-search {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 390px);
+  margin: 0 auto;
+  font-family: "Segoe UI Variable", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.home__device-search-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 13px;
+  background: var(--neutral-background-color);
+}
+
+.home__device-search-mode {
+  min-height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--secondary-font-color);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  cursor: pointer;
+}
+
+.home__device-search-mode--active {
+  background: var(--surface-color);
+  color: var(--primary-color);
+  box-shadow: 0 2px 7px rgba(13, 15, 26, .1);
+}
+
+.home__device-search-mode:focus-visible {
+  outline: 3px solid rgba(11, 86, 197, .22);
+  outline-offset: 1px;
+}
+
+.home__device-search-field {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+}
+
+.home__device-search-field > span {
+  color: var(--font-color);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .005em;
+}
+
+.home__device-search-field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  outline: 0;
+  background: #fbfcfe;
+  color: var(--font-color);
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.home__device-search-field input::placeholder {
+  color: var(--muted-font-color);
+  font-weight: 400;
+}
+
+.home__device-search-field input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(11, 86, 197, .11);
+}
+
+.home__device-search-results {
+  display: grid;
+  gap: 7px;
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.home__device-search-results button {
+  display: grid;
+  gap: 3px;
+  min-height: 52px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface-color);
+  color: var(--font-color);
+  font-family: "Segoe UI Variable", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home__device-search-results strong {
+  overflow: hidden;
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home__device-search-results button:hover {
+  border-color: var(--primary-color);
+  background: rgba(11, 86, 197, .05);
+}
+
+.home__device-search-results small {
+  color: var(--secondary-font-color);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .015em;
+  line-height: 1.35;
+}
+
+.home__device-search-results p {
+  margin: 4px 0 0;
+  color: var(--secondary-font-color);
+  font-size: .84rem;
+  font-weight: 500;
+  line-height: 1.45;
 }
 
 .home__modal-option {
