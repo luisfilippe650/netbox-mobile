@@ -1,0 +1,511 @@
+import { useMemo, useState, type FormEvent } from "react";
+import { PageShell } from "../../../components/PageShell/PageShell";
+import {
+  defaultDeviceRoleColor,
+  DeviceRoleColorPicker,
+} from "../../devices/shared/DeviceRoleColorPicker";
+import { useAccess } from "../../../context/AccessContext";
+import "./OrganizationList.css";
+
+export type OrganizationItem = {
+  id: string;
+  name: string;
+  description: string;
+  detail: string;
+  region?: string;
+  regionId?: number | null;
+  tenant?: string;
+  timezone?: string;
+  site?: string;
+  siteId?: number;
+  vmRole?: boolean;
+  color?: string;
+};
+
+export type OrganizationCreateInput = {
+  name: string;
+  description: string;
+  siteId?: number;
+  regionId?: number;
+  vmRole?: boolean;
+  color?: string;
+};
+
+type OrganizationListProps = {
+  objectType: string;
+  singular: string;
+  title: string;
+  subtitle: string;
+  sectionTitle: string;
+  searchLabel: string;
+  emptyMessage: string;
+  items: readonly OrganizationItem[];
+  siteOptions?: readonly OrganizationItem[];
+  regionOptions?: readonly OrganizationItem[];
+  onCreate: (input: OrganizationCreateInput) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<void>;
+  onBack: () => void;
+};
+
+export function OrganizationList({
+  objectType,
+  singular,
+  title,
+  subtitle,
+  sectionTitle,
+  searchLabel,
+  emptyMessage,
+  items,
+  siteOptions = [],
+  regionOptions = [],
+  onCreate,
+  onDelete,
+  onBack,
+}: OrganizationListProps) {
+  const { can } = useAccess();
+  const canAdd = can(objectType, "add");
+  const canDelete = can(objectType, "delete");
+  const [query, setQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<OrganizationItem | null>(
+    null,
+  );
+  const [newName, setNewName] = useState("");
+  const [newRegion, setNewRegion] = useState("");
+  const [newSite, setNewSite] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newVmRole, setNewVmRole] = useState("false");
+  const [newDeviceRoleColor, setNewDeviceRoleColor] = useState(
+    defaultDeviceRoleColor,
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const isSitePage = singular === "Site";
+  const isLocationPage = singular === "Local";
+  const isDeviceFunctionPage = singular === "Função de dispositivo";
+  const isRackFunctionPage = singular === "Função de rack";
+  const hasRoleColor = isDeviceFunctionPage || isRackFunctionPage;
+  const hasDetails = isSitePage || isLocationPage;
+  const organizationItems = items;
+
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
+    if (!normalizedQuery) return organizationItems;
+
+    return organizationItems.filter((item) =>
+      `${item.name} ${item.description} ${item.detail}`
+        .toLocaleLowerCase("pt-BR")
+        .includes(normalizedQuery),
+    );
+  }, [organizationItems, query]);
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const deleteSelected = async () => {
+    setIsSubmitting(true);
+    setError("");
+    try {
+      await onDelete([...selectedIds].map(Number));
+      setSelectedIds(new Set());
+      setShowDeleteConfirmation(false);
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Não foi possível excluir os itens.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const addItem = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+    try {
+      await onCreate({
+        name: newName.trim(),
+        description: newDescription.trim(),
+        ...(isSitePage && newRegion ? { regionId: Number(newRegion) } : {}),
+        ...(isLocationPage ? { siteId: Number(newSite) } : {}),
+        ...(hasRoleColor ? { color: newDeviceRoleColor } : {}),
+        ...(isDeviceFunctionPage ? { vmRole: newVmRole === "true" } : {}),
+      });
+      setNewName("");
+      setNewRegion("");
+      setNewSite("");
+      setNewDescription("");
+      setNewVmRole("false");
+      setNewDeviceRoleColor(defaultDeviceRoleColor);
+      setShowAddForm(false);
+    } catch (createError) {
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Não foi possível criar o item.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <PageShell
+      className="organization-page"
+      eyebrow="Organização"
+      title={title}
+      subtitle={subtitle}
+    >
+      <label className="organization__search">
+        <span className="organization__search-icon" aria-hidden="true" />
+        <span className="organization__search-label">{searchLabel}</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={`Buscar ${searchLabel.toLocaleLowerCase("pt-BR")}`}
+        />
+      </label>
+      {error ? (
+        <p className="organization__error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <section
+        className="organization__heading"
+        aria-label={`Resumo de ${sectionTitle.toLocaleLowerCase("pt-BR")}`}
+      >
+        <div>
+          <h2>{sectionTitle}</h2>
+          <p>
+            {filteredItems.length}{" "}
+            {filteredItems.length === 1
+              ? singular.toLocaleLowerCase("pt-BR")
+              : "itens"}{" "}
+            encontrado(s)
+          </p>
+        </div>
+        <div className="organization__actions">
+          {canAdd ? (
+            <button
+              className="organization__add"
+              type="button"
+              onClick={() => setShowAddForm(true)}
+            >
+              <span aria-hidden="true">+</span>
+              Adicionar
+            </button>
+          ) : null}
+          {canDelete && selectedIds.size > 0 ? (
+            <button
+              className="organization__delete"
+              type="button"
+              onClick={() => setShowDeleteConfirmation(true)}
+            >
+              Excluir ({selectedIds.size})
+            </button>
+          ) : null}
+        </div>
+      </section>
+
+      <div className="organization__list">
+        {filteredItems.map((item) => (
+          <article
+            className={`organization__card${hasDetails ? " organization__card--clickable" : ""}`}
+            key={item.id}
+            role={hasDetails ? "button" : undefined}
+            tabIndex={hasDetails ? 0 : undefined}
+            onClick={() => {
+              if (hasDetails) setSelectedItem(item);
+            }}
+            onKeyDown={(event) => {
+              if (hasDetails && (event.key === "Enter" || event.key === " ")) {
+                event.preventDefault();
+                setSelectedItem(item);
+              }
+            }}
+          >
+            {canDelete ? (
+              <label
+                className="organization__select"
+                aria-label={`Selecionar ${item.name}`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(item.id)}
+                  onChange={() => toggleSelection(item.id)}
+                />
+                <span aria-hidden="true" />
+              </label>
+            ) : null}
+            <span className="organization__avatar" aria-hidden="true">
+              {item.name.slice(0, 1).toLocaleUpperCase("pt-BR")}
+            </span>
+            <div className="organization__card-content">
+              <div className="organization__card-title">
+                <strong>{item.name}</strong>
+                <span>{item.id}</span>
+              </div>
+              <p>{item.description}</p>
+              <small>
+                <span>{item.detail}</span>
+                {item.color ? (
+                  <span
+                    className="organization__role-color"
+                    aria-label="Cor da função"
+                  >
+                    <i
+                      style={{ backgroundColor: `#${item.color}` }}
+                      aria-hidden="true"
+                    />
+                  </span>
+                ) : null}
+              </small>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {filteredItems.length === 0 ? (
+        <section className="organization__empty" role="status">
+          <span aria-hidden="true">⌕</span>
+          <strong>{emptyMessage}</strong>
+          <p>Tente buscar usando outro nome.</p>
+        </section>
+      ) : null}
+
+      <button className="organization__back" type="button" onClick={onBack}>
+        Voltar
+      </button>
+
+      {showAddForm ? (
+        <div
+          className="organization__modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowAddForm(false);
+          }}
+        >
+          <form className="organization__modal" onSubmit={addItem}>
+            <span className="organization__modal-icon" aria-hidden="true">
+              +
+            </span>
+            <h2>Adicionar {singular.toLocaleLowerCase("pt-BR")}</h2>
+            <p>Preencha as informações do novo cadastro.</p>
+            {error ? (
+              <p className="organization__error" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {isLocationPage ? (
+              <label>
+                <span>Site</span>
+                <select
+                  required
+                  value={newSite}
+                  onChange={(event) => setNewSite(event.target.value)}
+                >
+                  <option value="">Selecione um site</option>
+                  {siteOptions.map((site) => (
+                    <option key={site.id} value={site.id}>
+                      {site.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            <label>
+              <span>Nome</span>
+              <input
+                autoFocus
+                required
+                value={newName}
+                onChange={(event) => setNewName(event.target.value)}
+                placeholder={`Nome do ${singular.toLocaleLowerCase("pt-BR")}`}
+              />
+            </label>
+            {isSitePage ? (
+              <label>
+                <span>Região</span>
+                <select
+                  value={newRegion}
+                  onChange={(event) => setNewRegion(event.target.value)}
+                >
+                  <option value="">Sem região</option>
+                  {regionOptions.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {isDeviceFunctionPage ? (
+              <label>
+                <span>Função da VM</span>
+                <select
+                  value={newVmRole}
+                  onChange={(event) => setNewVmRole(event.target.value)}
+                >
+                  <option value="false">Não</option>
+                  <option value="true">Sim</option>
+                </select>
+              </label>
+            ) : null}
+            <label>
+              <span>Descrição</span>
+              <input
+                value={newDescription}
+                onChange={(event) => setNewDescription(event.target.value)}
+                placeholder="Descrição opcional"
+              />
+            </label>
+            {hasRoleColor ? (
+              <DeviceRoleColorPicker
+                value={newDeviceRoleColor}
+                onChange={setNewDeviceRoleColor}
+                disabled={isSubmitting}
+              />
+            ) : null}
+            <div className="organization__modal-actions">
+              <button type="button" onClick={() => setShowAddForm(false)}>
+                Cancelar
+              </button>
+              <button
+                className="organization__confirm-add"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Salvando…" : "Adicionar"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {selectedItem && hasDetails ? (
+        <div
+          className="organization__modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedItem(null);
+          }}
+        >
+          <section
+            className="organization__modal organization__details"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="site-details-title"
+          >
+            <span className="organization__modal-icon" aria-hidden="true">
+              {isSitePage ? "S" : "L"}
+            </span>
+            <div>
+              <h2 id="site-details-title">
+                Informações do {singular.toLocaleLowerCase("pt-BR")}
+              </h2>
+              <p>{selectedItem.id}</p>
+            </div>
+            <dl>
+              {isLocationPage ? (
+                <div>
+                  <dt>Site</dt>
+                  <dd>{selectedItem.site ?? "Não informado"}</dd>
+                </div>
+              ) : null}
+              <div>
+                <dt>Nome</dt>
+                <dd>{selectedItem.name}</dd>
+              </div>
+              {isLocationPage ? (
+                <div>
+                  <dt>Descrição</dt>
+                  <dd>{selectedItem.description || "Não informada"}</dd>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <dt>Região</dt>
+                    <dd>{selectedItem.region ?? "Não informada"}</dd>
+                  </div>
+                  <div>
+                    <dt>Inquilino</dt>
+                    <dd>{selectedItem.tenant ?? "Não informado"}</dd>
+                  </div>
+                  <div>
+                    <dt>Timezone</dt>
+                    <dd>{selectedItem.timezone ?? "Não informado"}</dd>
+                  </div>
+                </>
+              )}
+            </dl>
+            <button
+              className="organization__details-close"
+              type="button"
+              onClick={() => setSelectedItem(null)}
+            >
+              Fechar
+            </button>
+          </section>
+        </div>
+      ) : null}
+
+      {showDeleteConfirmation ? (
+        <div className="organization__modal-backdrop" role="presentation">
+          <section
+            className="organization__modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="organization-delete-title"
+          >
+            <span
+              className="organization__modal-icon organization__modal-icon--danger"
+              aria-hidden="true"
+            >
+              !
+            </span>
+            <h2 id="organization-delete-title">
+              Excluir{" "}
+              {selectedIds.size === 1
+                ? singular.toLocaleLowerCase("pt-BR")
+                : "itens"}
+              ?
+            </h2>
+            <p>
+              Você selecionou {selectedIds.size} item(ns). Essa ação não poderá
+              ser desfeita.
+            </p>
+            <div className="organization__modal-actions">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirmation(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="organization__confirm-delete"
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => void deleteSelected()}
+              >
+                {isSubmitting ? "Excluindo…" : "Excluir"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </PageShell>
+  );
+}

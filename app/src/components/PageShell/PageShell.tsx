@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
 const pageShellStyles = `
 .page-shell,
@@ -81,25 +81,33 @@ const pageShellStyles = `
     font-size: 1.6rem;
   }
 }
-`
+`;
 
 type PageShellProps = {
-  eyebrow?: string
-  title?: string
-  subtitle?: string
-  className?: string
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  className?: string;
   brand?: {
-    logo: string
-    name: string
-    subtitle?: string
-  }
-  headerAction?: ReactNode
-  children: ReactNode
-}
+    logo: string;
+    name: string;
+    subtitle?: string;
+  };
+  headerAction?: ReactNode;
+  children: ReactNode;
+};
 
-export function PageShell({ eyebrow, title, subtitle, className, brand, headerAction, children }: PageShellProps) {
+export function PageShell({
+  eyebrow,
+  title,
+  subtitle,
+  className,
+  brand,
+  headerAction,
+  children,
+}: PageShellProps) {
   return (
-    <main className={`page-shell ${className ?? ''}`.trim()}>
+    <main className={`page-shell ${className ?? ""}`.trim()}>
       <style>{pageShellStyles}</style>
       <section className="page-shell__frame">
         <header className="page-shell__hero">
@@ -112,7 +120,9 @@ export function PageShell({ eyebrow, title, subtitle, className, brand, headerAc
               </strong>
             </div>
           ) : null}
-          {headerAction ? <div className="page-shell__header-action">{headerAction}</div> : null}
+          {headerAction ? (
+            <div className="page-shell__header-action">{headerAction}</div>
+          ) : null}
           {eyebrow ? <p className="page-shell__eyebrow">{eyebrow}</p> : null}
           {title ? <h1 className="page-shell__title">{title}</h1> : null}
           {subtitle ? <p className="page-shell__subtitle">{subtitle}</p> : null}
@@ -120,5 +130,5 @@ export function PageShell({ eyebrow, title, subtitle, className, brand, headerAc
         <div className="page-shell__content">{children}</div>
       </section>
     </main>
-  )
+  );
 }

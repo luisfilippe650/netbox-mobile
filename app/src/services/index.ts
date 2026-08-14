@@ -4,7 +4,11 @@ import {
   deviceTypesService,
   manufacturersService,
 } from "./devices/devices_service";
-import { rackGroupsService, rackRolesService, racksService } from "./racks/racks_service";
+import {
+  rackGroupsService,
+  rackRolesService,
+  racksService,
+} from "./racks/racks_service";
 import {
   locationsService,
   regionsService,

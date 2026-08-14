@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 import { PageShell } from "../../components/PageShell/PageShell";
-import "./scanner.css";
+import "./Scanner.css";
 
 type ScannerProps = {
   onBack: () => void;
@@ -179,7 +179,11 @@ export default function Scanner({ onBack, onOpenDevice }: ScannerProps) {
               ✓ QR code identificado
             </span>
             <strong>{result}</strong>
-            <button className="page-button" type="button" onClick={() => onOpenDevice(result.trim())}>
+            <button
+              className="page-button"
+              type="button"
+              onClick={() => onOpenDevice(result.trim())}
+            >
               Abrir dispositivo
             </button>
             <button className="page-button" type="button" onClick={scanAgain}>

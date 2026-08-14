@@ -7,10 +7,10 @@ import listIcon from "../../assets/icons/inserir_id_manualmente.png";
 import rackIcon from "../../assets/icons/criar_rack.png";
 import rowIcon from "../../assets/icons/row_icone.png";
 import coidsLogo from "../../assets/logos/logo-coids.png";
-import inpeLogo from "../../assets/logos/Logo_INPE_maior.jpg";
+import inpeLogo from "../../assets/logos/Logo_INPE_maior.png";
 import type { NetBoxRack } from "../../services";
-import type { DeviceSummary } from "../devices/devices-data";
-import "./home.css";
+import type { DeviceSummary } from "../devices/shared/devices-data";
+import "./Home.css";
 
 type HomeProps = {
   onLogout: () => void;

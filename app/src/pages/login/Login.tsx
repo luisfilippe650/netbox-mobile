@@ -1,8 +1,8 @@
 import logo from "../../assets/logos/logo-coids-sem-texto.png";
-import inpe from "../../assets/logos/Logo_INPE_maior.jpg";
+import inpe from "../../assets/logos/Logo_INPE_maior.png";
 import { useState } from "react";
 import "../../utils/colors.css";
-import "./login.css";
+import "./Login.css";
 
 type LoginProps = {
   onLogin: (username: string, password: string) => Promise<void>;
@@ -33,8 +33,8 @@ export default function Login({ onLogin }: LoginProps) {
 
         <div className="login-card__body">
           <div className="login-intro">
-            <h2>Bem-vindo de volta</h2>
-            <p>Entre com sua conta constitucional</p>
+            <h2>Bem-vindo</h2>
+            <p>Entre com sua conta institucional</p>
           </div>
 
           <form
@@ -45,16 +45,23 @@ export default function Login({ onLogin }: LoginProps) {
               setError("");
               const data = new FormData(event.currentTarget);
               try {
-                await onLogin(String(data.get("username") ?? ""), String(data.get("password") ?? ""));
+                await onLogin(
+                  String(data.get("username") ?? ""),
+                  String(data.get("password") ?? ""),
+                );
               } catch (loginError) {
-                setError(loginError instanceof Error ? loginError.message : "Não foi possível entrar no NetBox.");
+                setError(
+                  loginError instanceof Error
+                    ? loginError.message
+                    : "Não foi possível entrar no NetBox.",
+                );
               } finally {
                 setIsSubmitting(false);
               }
             }}
           >
             <div className="login-field">
-              <label htmlFor="username">Usuário do NetBox</label>
+              <label htmlFor="username">Usuário</label>
               <input
                 id="username"
                 name="username"
@@ -88,9 +95,17 @@ export default function Login({ onLogin }: LoginProps) {
               </div>
             </div>
 
-            {error ? <p className="login-error" role="alert">{error}</p> : null}
+            {error ? (
+              <p className="login-error" role="alert">
+                {error}
+              </p>
+            ) : null}
 
-            <button className="login-submit" type="submit" disabled={isSubmitting}>
+            <button
+              className="login-submit"
+              type="submit"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Conectando…" : "Entrar"}
             </button>
           </form>

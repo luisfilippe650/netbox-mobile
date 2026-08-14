@@ -1,5 +1,13 @@
+# Dependencias e arquivos gerados pelo frontend
+node_modules/
+dist/
+dist-ssr/
+.vite/
+coverage/
+*.tsbuildinfo
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,17 +15,43 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Configuracoes locais e segredos
+# Os modelos de exemplo devem continuar versionados.
 .env
+.env.*
+!.env.example
+!.env.*.example
+*.local
 
-# Editor directories and files
+# Capacitor / Android
+# A pasta android/ deve ser versionada; somente artefatos locais sao ignorados.
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/captures/
+android/local.properties
+android/**/*.jks
+android/**/*.keystore
+
+# Capacitor / iOS
+# A pasta ios/ deve ser versionada; Pods e builds sao recriados localmente.
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+
+# Chaves e certificados de assinatura nunca devem entrar no Git.
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+
+# Editores e sistema operacional
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj

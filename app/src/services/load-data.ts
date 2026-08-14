@@ -10,8 +10,16 @@ import type {
   NetBoxDeviceType,
   NetBoxManufacturer,
 } from "./devices/devices_dto";
-import { rackGroupsService, rackRolesService, racksService } from "./racks/racks_service";
-import type { NetBoxRack, NetBoxRackGroup, NetBoxRackRole } from "./racks/racks_dto";
+import {
+  rackGroupsService,
+  rackRolesService,
+  racksService,
+} from "./racks/racks_service";
+import type {
+  NetBoxRack,
+  NetBoxRackGroup,
+  NetBoxRackRole,
+} from "./racks/racks_dto";
 import {
   locationsService,
   regionsService,
