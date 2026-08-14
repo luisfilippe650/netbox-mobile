@@ -1,10 +1,15 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
 import { PageShell } from "../../../components/PageShell/PageShell";
 import { useAccess } from "../../../context/AccessContext";
-import type { NetBoxRack } from "../../../services";
+import type {
+  DeviceCustomFieldDefinition,
+  NetBoxRack,
+} from "../../../services";
 import type { OrganizationItem } from "../../organization/OrganizationList/OrganizationList";
 import type { DeviceSummary } from "../shared/devices-data";
+import CustomFieldInput from "./CustomFieldInput";
+import { hasCustomFieldValue } from "./custom-field-utils";
 import "./ObjectInfo.css";
 
 type ObjectInfoProps = {
@@ -12,26 +17,100 @@ type ObjectInfoProps = {
   device: DeviceSummary;
   sites: readonly OrganizationItem[];
   racks: readonly NetBoxRack[];
-  onUpdate: (device: DeviceSummary) => Promise<DeviceSummary>;
+  loadCustomFields: () => Promise<DeviceCustomFieldDefinition[]>;
+  onUpdate: (
+    device: DeviceSummary,
+    changedCustomFields: Record<string, unknown>,
+  ) => Promise<DeviceSummary>;
 };
+
+function relatedObjectId(value: unknown) {
+  if (typeof value === "number") return value;
+  if (typeof value === "object" && value !== null && "id" in value)
+    return Number((value as { id: unknown }).id);
+  return value;
+}
+
+function normalizeCustomFieldValue(
+  field: DeviceCustomFieldDefinition,
+  value: unknown,
+) {
+  if (!hasCustomFieldValue(value)) return null;
+  if (field.type.value === "integer" || field.type.value === "decimal")
+    return Number(value);
+  if (field.type.value === "json" && typeof value === "string") {
+    try {
+      return JSON.parse(value) as unknown;
+    } catch {
+      throw new Error(
+        `O campo “${field.label || field.name}” não contém um JSON válido.`,
+      );
+    }
+  }
+  if (field.type.value === "datetime" && typeof value === "string") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toISOString();
+  }
+  if (field.type.value === "object") return relatedObjectId(value);
+  if (field.type.value === "multiobject" && Array.isArray(value))
+    return value.map(relatedObjectId);
+  return value;
+}
+
+function valuesMatch(left: unknown, right: unknown) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
 
 export default function ObjectInfo({
   onBack,
   device,
   sites,
   racks,
+  loadCustomFields,
   onUpdate,
 }: ObjectInfoProps) {
   const { can } = useAccess();
   const canChange = can("dcim.device", "change");
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState<DeviceSummary>({ ...device });
+  const [draft, setDraft] = useState<DeviceSummary>({
+    ...device,
+    customFields: { ...device.customFields },
+  });
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<
+    DeviceCustomFieldDefinition[]
+  >([]);
+  const [isLoadingCustomFields, setIsLoadingCustomFields] = useState(true);
+  const [customFieldsError, setCustomFieldsError] = useState("");
   const [savedMessage, setSavedMessage] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [isGeneratingQrCode, setIsGeneratingQrCode] = useState(false);
   const [qrCodeError, setQrCodeError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setIsLoadingCustomFields(true);
+    setCustomFieldsError("");
+    void loadCustomFields()
+      .then((fields) => {
+        if (active) setCustomFieldDefinitions(fields);
+      })
+      .catch((error: unknown) => {
+        if (active)
+          setCustomFieldsError(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível carregar os campos personalizados.",
+          );
+      })
+      .finally(() => {
+        if (active) setIsLoadingCustomFields(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [loadCustomFields]);
 
   const updateField = <K extends keyof DeviceSummary>(
     field: K,
@@ -46,11 +125,33 @@ export default function ObjectInfo({
     setIsSaving(true);
     setSaveError("");
     try {
+      const changedCustomFields = Object.fromEntries(
+        customFieldDefinitions.flatMap((field) => {
+          if (field.ui_editable.value !== "yes") return [];
+          const nextValue = normalizeCustomFieldValue(
+            field,
+            draft.customFields[field.name],
+          );
+          const previousValue = normalizeCustomFieldValue(
+            field,
+            device.customFields[field.name],
+          );
+          return valuesMatch(nextValue, previousValue)
+            ? []
+            : [[field.name, nextValue]];
+        }),
+      );
       const updated = await onUpdate({
         ...draft,
         name: draft.name.trim(),
+        serial: draft.serial.trim(),
+        assetTag: draft.assetTag.trim(),
         description: draft.description.trim(),
-      });
+        customFields: {
+          ...draft.customFields,
+          ...changedCustomFields,
+        },
+      }, changedCustomFields);
       setDraft(updated);
       setIsEditing(false);
       setSavedMessage(true);
@@ -66,10 +167,27 @@ export default function ObjectInfo({
   };
 
   const cancelEditing = () => {
-    setDraft({ ...device });
+    setDraft({ ...device, customFields: { ...device.customFields } });
     setIsEditing(false);
     setSavedMessage(false);
   };
+
+  const startEditing = () => {
+    setDraft({ ...device, customFields: { ...device.customFields } });
+    setIsEditing(true);
+    setSavedMessage(false);
+  };
+
+  const visibleCustomFields = customFieldDefinitions
+    .filter((field) => field.ui_visible.value !== "hidden")
+    .filter(
+      (field) =>
+        !(isEditing && field.ui_editable.value === "hidden") &&
+        (isEditing ||
+          field.ui_visible.value !== "if-set" ||
+          hasCustomFieldValue(draft.customFields[field.name])),
+    )
+    .sort((left, right) => left.weight - right.weight);
 
   const generateQrCode = async () => {
     setIsGeneratingQrCode(true);
@@ -132,7 +250,7 @@ export default function ObjectInfo({
                   : "object-info__customize"
               }
               type="button"
-              onClick={() => (isEditing ? cancelEditing() : setIsEditing(true))}
+              onClick={() => (isEditing ? cancelEditing() : startEditing())}
             >
               {isEditing ? "Cancelar" : "Personalizar"}
             </button>
@@ -176,14 +294,39 @@ export default function ObjectInfo({
             />
           </label>
 
-          <label className="object-info__field">
-            <span>Etiqueta</span>
-            <input value={draft.label} readOnly aria-readonly="true" />
-            <small>
-              A etiqueta é usada para identificar o equipamento e não pode ser
-              personalizada aqui.
-            </small>
-          </label>
+          <div className="object-info__field-stack">
+            <label className="object-info__field">
+              <span>Etiqueta de ativo</span>
+              <input
+                value={draft.assetTag}
+                placeholder="Não informada"
+                readOnly={!isEditing}
+                onChange={(event) =>
+                  updateField("assetTag", event.target.value)
+                }
+              />
+            </label>
+            <label className="object-info__field">
+              <span>Número de série</span>
+              <input
+                value={draft.serial}
+                placeholder="Não informado"
+                readOnly={!isEditing}
+                onChange={(event) => updateField("serial", event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="object-info__field-group">
+            <label className="object-info__field">
+              <span>Função</span>
+              <input value={draft.role} readOnly />
+            </label>
+            <label className="object-info__field">
+              <span>Status</span>
+              <input value={draft.status} readOnly />
+            </label>
+          </div>
 
           <label className="object-info__field">
             <span>Descrição</span>
@@ -196,6 +339,46 @@ export default function ObjectInfo({
               }
             />
           </label>
+        </section>
+
+        <section className="object-info__card">
+          <div className="object-info__section-title">
+            <h2>Rede e tipo do dispositivo</h2>
+            <p>Informações técnicas somente para consulta.</p>
+          </div>
+
+          <div className="object-info__field-stack">
+            <label className="object-info__field">
+              <span>IPv4 primário</span>
+              <input value={draft.primaryIp4 ?? "Não informado"} readOnly />
+            </label>
+            <label className="object-info__field">
+              <span>IPv6 primário</span>
+              <input value={draft.primaryIp6 ?? "Não informado"} readOnly />
+            </label>
+          </div>
+
+          <label className="object-info__field">
+            <span>Tipo do dispositivo</span>
+            <input value={draft.deviceType} readOnly />
+            <small>O tipo é exibido apenas para consulta nesta tela.</small>
+          </label>
+
+          <label className="object-info__field">
+            <span>Descrição do tipo</span>
+            <textarea value={draft.deviceTypeDescription} rows={2} readOnly />
+          </label>
+
+          <div className="object-info__field-group">
+            <label className="object-info__field">
+              <span>Fabricante</span>
+              <input value={draft.manufacturer} readOnly />
+            </label>
+            <label className="object-info__field">
+              <span>Altura</span>
+              <input value={`${draft.height} U`} readOnly />
+            </label>
+          </div>
         </section>
 
         <section className="object-info__card">
@@ -285,6 +468,50 @@ export default function ObjectInfo({
             </label>
           </div>
         </section>
+
+        {isLoadingCustomFields ? (
+          <section className="object-info__card" aria-live="polite">
+            <div className="object-info__section-title">
+              <h2>Campos personalizados</h2>
+              <p>Carregando configurações do NetBox…</p>
+            </div>
+          </section>
+        ) : visibleCustomFields.length > 0 ? (
+          <section className="object-info__card">
+            <div className="object-info__section-title">
+              <h2>Campos personalizados</h2>
+              <p>Informações adicionais configuradas no NetBox.</p>
+            </div>
+            {visibleCustomFields.map((field, index) => {
+              const previousGroup = visibleCustomFields[index - 1]?.group_name;
+              return (
+                <div className="object-info__custom-field" key={field.id}>
+                  {field.group_name && field.group_name !== previousGroup ? (
+                    <h3>{field.group_name}</h3>
+                  ) : null}
+                  <CustomFieldInput
+                    field={field}
+                    value={draft.customFields[field.name]}
+                    isEditing={isEditing}
+                    onChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        customFields: {
+                          ...current.customFields,
+                          [field.name]: value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+              );
+            })}
+          </section>
+        ) : customFieldsError ? (
+          <p className="object-info__error" role="alert">
+            Campos personalizados: {customFieldsError}
+          </p>
+        ) : null}
 
         {isEditing ? (
           <button

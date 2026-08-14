@@ -3,10 +3,14 @@ import {
   devicesApi,
   deviceTypesApi,
   manufacturersApi,
+  customFieldsApi,
 } from "./devices_api";
 import type {
+  NetBoxCustomFieldChoice,
+  DeviceCustomFieldDefinition,
   NetBoxDevice,
   NetBoxDeviceRole,
+  NetBoxDeviceType,
   NetBoxManufacturer,
 } from "./devices_dto";
 import type { DeviceSummary, OrganizationSummary } from "../view_models";
@@ -17,6 +21,53 @@ export const devicesService = devicesApi;
 export const deviceTypesService = deviceTypesApi;
 export const deviceRolesService = deviceRolesApi;
 export const manufacturersService = manufacturersApi;
+export const customFieldsService = {
+  async listForDevices(): Promise<DeviceCustomFieldDefinition[]> {
+    const fields = await customFieldsApi.listForDevices();
+    const objectTypes = fields.some((field) => field.related_object_type)
+      ? await customFieldsApi.listObjectTypes().catch(() => [])
+      : [];
+    return Promise.all(
+      fields.map(async (field) => {
+        let choices: NetBoxCustomFieldChoice[] = [];
+        let relatedObjects: DeviceCustomFieldDefinition["relatedObjects"] = [];
+        if (field.choice_set) {
+          try {
+            choices = await customFieldsApi.listChoices(field.choice_set.id);
+          } catch {
+            // O campo continua visível mesmo se as opções não estiverem acessíveis.
+          }
+        }
+        if (field.related_object_type) {
+          const objectType = objectTypes.find(
+            (item) =>
+              `${item.app_label}.${item.model}` === field.related_object_type,
+          );
+          if (objectType?.rest_api_endpoint) {
+            const filters =
+              typeof field.related_object_filter === "object" &&
+              field.related_object_filter !== null
+                ? Object.fromEntries(
+                    Object.entries(field.related_object_filter).map(
+                      ([key, value]) => [key, String(value)],
+                    ),
+                  )
+                : {};
+            try {
+              relatedObjects = await customFieldsApi.listRelatedObjects(
+                objectType.rest_api_endpoint,
+                filters,
+              );
+            } catch {
+              // Mantém o valor atual disponível em modo de consulta.
+            }
+          }
+        }
+        return { ...field, choices, relatedObjects };
+      }),
+    );
+  },
+};
 
 /**
  * Converte o valor estável retornado pela API no texto apresentado pela UI.
@@ -41,7 +92,10 @@ function localizedStatus(value: string) {
  * Além de normalizar IDs, concentra aqui os fallbacks para relacionamentos
  * opcionais, evitando que cada componente precise conhecer o DTO da API.
  */
-export function mapDevice(device: NetBoxDevice): DeviceSummary {
+export function mapDevice(
+  device: NetBoxDevice,
+  deviceType?: NetBoxDeviceType,
+): DeviceSummary {
   return {
     id: String(device.id),
     apiId: device.id,
@@ -61,10 +115,21 @@ export function mapDevice(device: NetBoxDevice): DeviceSummary {
     rack: device.rack?.name ?? device.rack?.display ?? "Sem rack",
     rackId: device.rack?.id ?? null,
     allocatedUnit: device.position ?? 0,
-    height: device.device_type.u_height ?? 1,
+    height: deviceType?.u_height ?? device.device_type.u_height ?? 1,
     status: localizedStatus(device.status.value),
     label: device.asset_tag || device.serial || "Não informada",
+    serial: device.serial,
+    assetTag: device.asset_tag ?? "",
     description: device.description ?? "",
+    deviceType: device.device_type.model ?? device.device_type.display,
+    deviceTypeDescription: deviceType?.description || "Sem descrição",
+    manufacturer:
+      device.device_type.manufacturer?.name ??
+      device.device_type.manufacturer?.display ??
+      "Não informado",
+    primaryIp4: device.primary_ip4?.address ?? null,
+    primaryIp6: device.primary_ip6?.address ?? null,
+    customFields: device.custom_fields,
   };
 }
 

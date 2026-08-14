@@ -170,6 +170,7 @@ O APK contém o frontend e não precisa que este site esteja hospedado. Ele prec
 
 - autenticação: `/api/users/tokens/provision/` e `/api/authentication-check/`;
 - dispositivos, tipos, funções e fabricantes: `/api/dcim/devices/`, `/device-types/`, `/device-roles/` e `/manufacturers/`;
+- campos personalizados: `/api/extras/custom-fields/`, `/custom-field-choice-sets/{id}/choices/` e `/api/core/object-types/`;
 - racks, grupos e funções: `/api/dcim/racks/`, `/rack-groups/` e `/rack-roles/`;
 - organização: `/api/dcim/sites/`, `/locations/` e `/regions/`.
 
@@ -191,6 +192,8 @@ Superusuários possuem acesso administrativo. Para usuários sem nenhuma ação 
 | Scanner e Buscar dispositivo                   | `dcim.device`            | `view`                                                                       |
 | Visualizar dispositivos                        | `dcim.device`            | `view`; `add` mostra **Adicionar**; `delete` mostra checkboxes e **Excluir** |
 | Informações do dispositivo                     | `dcim.device`            | `view`; `change` mostra **Personalizar** e permite salvar alterações         |
+| Definições dos campos personalizados           | `extras.customfield`     | `view` para montar os campos conforme tipo, visibilidade e validação         |
+| Opções de campos de seleção                     | `extras.customfieldchoiceset` | `view` para carregar as opções configuradas                         |
 | Criar dispositivo                              | `dcim.device`            | `add`                                                                        |
 | Criar função dentro do cadastro de dispositivo | `dcim.devicerole`        | `add`                                                                        |
 | Criar tipo dentro do cadastro de dispositivo   | `dcim.devicetype`        | `add`                                                                        |

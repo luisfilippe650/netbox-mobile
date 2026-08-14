@@ -2,6 +2,8 @@ import { netboxClient } from "../client";
 import { deleteResource } from "../shared";
 import {
   deviceCreateSchema,
+  customFieldChoiceSchema,
+  customFieldSchema,
   deviceRoleCreateSchema,
   deviceRoleSchema,
   deviceSchema,
@@ -10,6 +12,8 @@ import {
   deviceUpdateSchema,
   manufacturerCreateSchema,
   manufacturerSchema,
+  objectTypeSchema,
+  relatedObjectSchema,
 } from "./devices_dto";
 
 const endpoints = {
@@ -17,6 +21,9 @@ const endpoints = {
   deviceTypes: "/dcim/device-types/",
   deviceRoles: "/dcim/device-roles/",
   manufacturers: "/dcim/manufacturers/",
+  customFields: "/extras/custom-fields/",
+  customFieldChoiceSets: "/extras/custom-field-choice-sets/",
+  objectTypes: "/core/object-types/",
 } as const;
 
 export const devicesApi = {
@@ -36,6 +43,29 @@ export const devicesApi = {
       deviceSchema,
     ),
   delete: (id: number) => deleteResource("devices", id),
+};
+
+export const customFieldsApi = {
+  listForDevices: () =>
+    netboxClient.list(endpoints.customFields, customFieldSchema, {
+      object_type: "dcim.device",
+    }),
+  listChoices: async (choiceSetId: number) => {
+    const choices = await netboxClient.list(
+      `${endpoints.customFieldChoiceSets}${choiceSetId}/choices/`,
+      customFieldChoiceSchema,
+    );
+    return choices.map((choice): [typeof choice.id, string] => [
+      choice.id,
+      choice.display,
+    ]);
+  },
+  listObjectTypes: () =>
+    netboxClient.list(endpoints.objectTypes, objectTypeSchema),
+  listRelatedObjects: (
+    endpoint: string,
+    parameters: Record<string, string | number | undefined>,
+  ) => netboxClient.list(endpoint, relatedObjectSchema, parameters),
 };
 
 export const deviceTypesApi = {

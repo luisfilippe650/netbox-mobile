@@ -3,6 +3,7 @@ import {
   devicesService,
   deviceTypesService,
   manufacturersService,
+  customFieldsService,
 } from "./devices/devices_service";
 import {
   rackGroupsService,
@@ -37,6 +38,7 @@ export const netbox = {
   deviceTypes: deviceTypesService,
   deviceRoles: deviceRolesService,
   manufacturers: manufacturersService,
+  customFields: customFieldsService,
   racks: racksService,
   rackGroups: rackGroupsService,
   rackRoles: rackRolesService,

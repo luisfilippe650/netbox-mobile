@@ -96,7 +96,16 @@ export default function App() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [appError, setAppError] = useState("");
 
-  const devices = useMemo(() => data.devices.map(mapDevice), [data.devices]);
+  const devices = useMemo(
+    () =>
+      data.devices.map((device) =>
+        mapDevice(
+          device,
+          data.deviceTypes.find((item) => item.id === device.device_type.id),
+        ),
+      ),
+    [data.deviceTypes, data.devices],
+  );
   const sites = useMemo(() => mapSites(data.sites), [data.sites]);
   const locations = useMemo(
     () => mapLocations(data.locations),
@@ -220,6 +229,8 @@ export default function App() {
   const createDevice = async (input: DeviceCreateInput) => {
     await netbox.devices.create({
       name: input.name,
+      serial: input.serial,
+      asset_tag: input.assetTag || null,
       device_type: input.deviceTypeId,
       role: input.roleId,
       site: input.siteId,
@@ -244,9 +255,14 @@ export default function App() {
     await refresh();
     setPage(deviceTypeReturnPage);
   };
-  const updateDevice = async (draft: DeviceSummary) => {
+  const updateDevice = async (
+    draft: DeviceSummary,
+    changedCustomFields: Record<string, unknown>,
+  ) => {
     const response = await netbox.devices.update(draft.apiId, {
       name: draft.name,
+      serial: draft.serial,
+      asset_tag: draft.assetTag || null,
       description: draft.description,
       site: draft.siteId,
       location: draft.locationId,
@@ -254,8 +270,14 @@ export default function App() {
       position:
         draft.rackId && draft.allocatedUnit > 0 ? draft.allocatedUnit : null,
       ...(draft.rackId && draft.allocatedUnit > 0 ? { face: "front" } : {}),
+      ...(Object.keys(changedCustomFields).length > 0
+        ? { custom_fields: changedCustomFields }
+        : {}),
     });
-    const updated = mapDevice(response);
+    const updated = mapDevice(
+      response,
+      data.deviceTypes.find((item) => item.id === response.device_type.id),
+    );
     await refresh();
     setSelectedDevice(updated);
     return updated;
@@ -432,6 +454,7 @@ export default function App() {
         device={selectedDevice}
         sites={sites}
         racks={data.racks}
+        loadCustomFields={netbox.customFields.listForDevices}
         onUpdate={updateDevice}
         onBack={() => setPage("devices")}
       />

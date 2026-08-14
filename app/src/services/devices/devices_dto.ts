@@ -29,11 +29,103 @@ export const deviceSchema = z.object({
   serial: z.string(),
   asset_tag: z.string().nullable(),
   description: z.string(),
+  primary_ip4: briefObjectSchema
+    .extend({ address: z.string() })
+    .nullable()
+    .optional(),
+  primary_ip6: briefObjectSchema
+    .extend({ address: z.string() })
+    .nullable()
+    .optional(),
+  custom_fields: z.record(z.string(), z.unknown()).default({}),
+});
+
+const customFieldTypeSchema = z.object({
+  value: z.enum([
+    "text",
+    "longtext",
+    "integer",
+    "decimal",
+    "boolean",
+    "date",
+    "datetime",
+    "url",
+    "json",
+    "select",
+    "multiselect",
+    "object",
+    "multiobject",
+  ]),
+  label: z.string(),
+});
+
+const customFieldUiVisibleSchema = z.object({
+  value: z.enum(["always", "if-set", "hidden"]),
+  label: z.string(),
+});
+
+const customFieldUiEditableSchema = z.object({
+  value: z.enum(["yes", "no", "hidden"]),
+  label: z.string(),
+});
+
+export const customFieldSchema = z.object({
+  id: entityIdSchema,
+  object_types: z.array(z.string()),
+  type: customFieldTypeSchema,
+  related_object_type: z.string().nullable().optional(),
+  name: z.string(),
+  label: z.string().default(""),
+  group_name: z.string().default(""),
+  description: z.string().default(""),
+  required: z.boolean().default(false),
+  ui_visible: customFieldUiVisibleSchema,
+  ui_editable: customFieldUiEditableSchema,
+  default: z.unknown().optional(),
+  weight: z.number().int().default(100),
+  validation_minimum: z.number().nullable().optional(),
+  validation_maximum: z.number().nullable().optional(),
+  validation_regex: z.string().default(""),
+  validation_schema: z.unknown().optional(),
+  related_object_filter: z.unknown().optional(),
+  choice_set: z
+    .object({
+      id: entityIdSchema,
+      display: z.string(),
+      name: z.string(),
+    })
+    .nullable()
+    .optional(),
+});
+
+const customFieldChoiceValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+]);
+
+export const customFieldChoiceSchema = z.object({
+  id: customFieldChoiceValueSchema,
+  display: z.string(),
+});
+
+export const objectTypeSchema = z.object({
+  id: entityIdSchema,
+  app_label: z.string(),
+  model: z.string(),
+  rest_api_endpoint: z.string(),
+});
+
+export const relatedObjectSchema = z.object({
+  id: entityIdSchema,
+  display: z.string(),
 });
 
 export const deviceCreateSchema = z
   .object({
     name: z.string().trim().max(64, "O nome deve ter no máximo 64 caracteres."),
+    serial: z.string().trim().max(50).optional(),
+    asset_tag: z.string().trim().max(50).nullable().optional(),
     device_type: entityIdSchema,
     role: entityIdSchema,
     site: entityIdSchema,
@@ -62,6 +154,8 @@ export const deviceCreateSchema = z
 export const deviceUpdateSchema = z
   .object({
     name: z.string().trim().max(64).optional(),
+    serial: z.string().trim().max(50).optional(),
+    asset_tag: z.string().trim().max(50).nullable().optional(),
     description: z.string().trim().max(200).optional(),
     site: entityIdSchema.optional(),
     location: nullableIdSchema,
@@ -73,6 +167,7 @@ export const deviceUpdateSchema = z
       .nullable()
       .optional(),
     face: z.enum(["front", "rear"]).optional(),
+    custom_fields: z.record(z.string(), z.unknown()).optional(),
   })
   .superRefine((value, context) => {
     if (value.position && value.rack === null) {
@@ -168,6 +263,16 @@ export type NetBoxDevice = z.infer<typeof deviceSchema>;
 export type NetBoxDeviceType = z.infer<typeof deviceTypeSchema>;
 export type NetBoxDeviceRole = z.infer<typeof deviceRoleSchema>;
 export type NetBoxManufacturer = z.infer<typeof manufacturerSchema>;
+export type NetBoxCustomField = z.infer<typeof customFieldSchema>;
+export type NetBoxCustomFieldChoice = [
+  z.infer<typeof customFieldChoiceValueSchema>,
+  string,
+];
+export type NetBoxRelatedObject = z.infer<typeof relatedObjectSchema>;
+export type DeviceCustomFieldDefinition = NetBoxCustomField & {
+  choices: NetBoxCustomFieldChoice[];
+  relatedObjects: NetBoxRelatedObject[];
+};
 export type DeviceCreateDto = z.input<typeof deviceCreateSchema>;
 export type DeviceUpdateDto = z.input<typeof deviceUpdateSchema>;
 export type DeviceTypeCreateDto = z.input<typeof deviceTypeCreateSchema>;

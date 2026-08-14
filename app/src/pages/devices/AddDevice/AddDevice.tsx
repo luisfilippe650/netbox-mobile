@@ -16,6 +16,8 @@ import "./AddDevice.css";
 
 export type DeviceCreateInput = {
   name: string;
+  assetTag: string;
+  serial: string;
   roleId: number;
   deviceTypeId: number;
   siteId: number;
@@ -96,6 +98,8 @@ export default function AddDevice({
     try {
       await onCreate({
         name: String(data.get("deviceName") ?? "").trim(),
+        assetTag: String(data.get("assetTag") ?? "").trim(),
+        serial: String(data.get("serial") ?? "").trim(),
         roleId: Number(data.get("deviceFunction")),
         deviceTypeId: Number(data.get("deviceType")),
         siteId: Number(data.get("site")),
@@ -144,6 +148,24 @@ export default function AddDevice({
               type="text"
               name="deviceName"
               placeholder="Ex.: Servidor principal"
+            />
+          </label>
+          <label className="add-device__field">
+            <span>Etiqueta de ativo</span>
+            <input
+              type="text"
+              name="assetTag"
+              maxLength={50}
+              placeholder="Ex.: PAT-000123"
+            />
+          </label>
+          <label className="add-device__field">
+            <span>Número de série</span>
+            <input
+              type="text"
+              name="serial"
+              maxLength={50}
+              placeholder="Ex.: SN123456789"
             />
           </label>
           <div className="add-device__field-group">

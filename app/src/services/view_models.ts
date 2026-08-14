@@ -15,7 +15,15 @@ export type DeviceSummary = {
   height: number;
   status: string;
   label: string;
+  serial: string;
+  assetTag: string;
   description: string;
+  deviceType: string;
+  deviceTypeDescription: string;
+  manufacturer: string;
+  primaryIp4: string | null;
+  primaryIp6: string | null;
+  customFields: Record<string, unknown>;
 };
 
 export type OrganizationSummary = {
