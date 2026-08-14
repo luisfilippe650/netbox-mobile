@@ -22,7 +22,7 @@ export default function Manufacturers({
       objectType="dcim.manufacturer"
       singular="Fabricante"
       title="Fabricantes"
-      subtitle="Crie e gerencie os fabricantes dos dispositivos."
+      subtitle="Crie e gerencie os fabricantes dos equipamentos."
       sectionTitle="Fabricantes cadastrados"
       searchLabel="Fabricantes"
       emptyMessage="Nenhum fabricante encontrado"

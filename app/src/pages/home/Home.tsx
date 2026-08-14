@@ -81,8 +81,8 @@ export type DeleteKind = "rack";
 const actions: readonly HomeAction[] = [
   {
     key: "device",
-    title: "Dispositivos",
-    text: "Gerencie os dispositivos",
+    title: "Equipamentos",
+    text: "Gerencie os equipamentos",
     icon: listIcon,
   },
   {
@@ -100,11 +100,11 @@ const actions: readonly HomeAction[] = [
 ] as const;
 
 const deviceOptions: readonly ActionOption[] = [
-  { label: "Visualizar dispositivos", page: "devices" },
-  { label: "Adicionar dispositivos", page: "add-device", tone: "success" },
+  { label: "Visualizar equipamentos", page: "devices" },
+  { label: "Adicionar equipamento", page: "add-device", tone: "success" },
   { label: "Fabricantes", page: "manufacturers" },
-  { label: "Funções de dispositivos", page: "device-functions" },
-  { label: "Tipos de dispositivos", page: "device-types" },
+  { label: "Funções de equipamentos", page: "device-functions" },
+  { label: "Tipos de equipamentos", page: "device-types" },
 ];
 
 const rackOptions: readonly ActionOption[] = [
@@ -295,7 +295,7 @@ export default function Home({
             onClick={() =>
               openActionOptions({
                 key: "object-info",
-                title: "Buscar dispositivo",
+                title: "Buscar equipamento",
                 text: "Pesquise pelo nome ou ID",
                 icon: searchIcon,
               })
@@ -305,7 +305,7 @@ export default function Home({
               <img src={searchIcon} alt="" />
             </span>
             <span>
-              <strong>Buscar dispositivo</strong>
+              <strong>Buscar equipamento</strong>
               <small>Consulte detalhes</small>
             </span>
           </button> : null}
@@ -378,7 +378,7 @@ export default function Home({
             <h2 id="home-about-title">Sobre o aplicativo</h2>
             <p>
               O Gerenciador de Datacenter foi criado para facilitar o cadastro e
-              a consulta de dispositivos, racks, sites e locais da
+              a consulta de equipamentos, racks, sites e locais da
               infraestrutura do INPE.
             </p>
             <p>
@@ -463,12 +463,12 @@ export default function Home({
             </article>
 
             <article className="home__help-card">
-              <h3>Criar um dispositivo</h3>
+              <h3>Criar um equipamento</h3>
               <ol>
                 <li>Informe o nome e, se desejar, uma descrição.</li>
                 <li>
                   Selecione a <strong>função</strong> e o{" "}
-                  <strong>tipo do dispositivo</strong>.
+                  <strong>tipo do equipamento</strong>.
                 </li>
                 <li>
                   Selecione o <strong>site</strong>. Os locais disponíveis serão
@@ -483,7 +483,7 @@ export default function Home({
                   rack.
                 </li>
               </ol>
-              <p>Função, tipo do dispositivo e site são obrigatórios.</p>
+              <p>Função, tipo do equipamento e site são obrigatórios.</p>
             </article>
 
             <aside className="home__help-note">
@@ -607,7 +607,7 @@ export default function Home({
                 <div
                   className="home__device-search-modes"
                   role="group"
-                  aria-label="Pesquisar dispositivo por"
+                  aria-label="Pesquisar equipamento por"
                 >
                   <button
                     className={
@@ -683,7 +683,7 @@ export default function Home({
                         </button>
                       ))
                     ) : (
-                      <p>Nenhum dispositivo encontrado.</p>
+                      <p>Nenhum equipamento encontrado.</p>
                     )}
                   </div>
                 ) : null}

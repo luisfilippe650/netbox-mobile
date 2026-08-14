@@ -65,7 +65,7 @@ export default function AddDeviceType({
       setError(
         createError instanceof Error
           ? createError.message
-          : "Não foi possível criar o tipo de dispositivo.",
+          : "Não foi possível criar o tipo de equipamento.",
       );
     } finally {
       setIsSubmitting(false);
@@ -80,8 +80,8 @@ export default function AddDeviceType({
         name: "Gerenciador",
         subtitle: "de Datacenter",
       }}
-      eyebrow="Dispositivos"
-      title="Tipo de dispositivo"
+      eyebrow="Equipamentos"
+      title="Tipo de equipamento"
       subtitle="Cadastre um novo tipo para organizar seus equipamentos."
     >
       {error ? (
@@ -163,7 +163,7 @@ export default function AddDeviceType({
             <textarea
               name="description"
               rows={4}
-              placeholder="Descreva este tipo de dispositivo (opcional)"
+              placeholder="Descreva este tipo de equipamento (opcional)"
             />
           </label>
           <label className="add-device-type__field">
@@ -185,7 +185,7 @@ export default function AddDeviceType({
           type="submit"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Salvando…" : "Salvar tipo de dispositivo"}
+          {isSubmitting ? "Salvando…" : "Salvar tipo de equipamento"}
         </button>
       </form>
       <button className="add-device-type__back" type="button" onClick={onBack}>

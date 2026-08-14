@@ -21,52 +21,94 @@ export const devicesService = devicesApi;
 export const deviceTypesService = deviceTypesApi;
 export const deviceRolesService = deviceRolesApi;
 export const manufacturersService = manufacturersApi;
-export const customFieldsService = {
-  async listForDevices(): Promise<DeviceCustomFieldDefinition[]> {
-    const fields = await customFieldsApi.listForDevices();
-    const objectTypes = fields.some((field) => field.related_object_type)
-      ? await customFieldsApi.listObjectTypes().catch(() => [])
-      : [];
-    return Promise.all(
-      fields.map(async (field) => {
-        let choices: NetBoxCustomFieldChoice[] = [];
-        let relatedObjects: DeviceCustomFieldDefinition["relatedObjects"] = [];
-        if (field.choice_set) {
+async function loadDeviceCustomFields(
+  requireRelatedData: boolean,
+): Promise<DeviceCustomFieldDefinition[]> {
+  const fields = await customFieldsApi.listForDevices();
+  const needsInputData = (field: (typeof fields)[number]) =>
+    requireRelatedData &&
+    field.ui_visible.value !== "hidden" &&
+    field.ui_editable.value === "yes";
+  const hasRelatedFields = fields.some(
+    (field) =>
+      field.related_object_type &&
+      (!requireRelatedData || needsInputData(field)),
+  );
+  let objectTypes: Awaited<ReturnType<typeof customFieldsApi.listObjectTypes>> = [];
+  if (hasRelatedFields) {
+    try {
+      objectTypes = await customFieldsApi.listObjectTypes();
+    } catch (error) {
+      if (requireRelatedData) {
+        throw new Error(
+          "Não foi possível carregar os tipos de objetos dos campos personalizados.",
+          { cause: error },
+        );
+      }
+    }
+  }
+
+  return Promise.all(
+    fields.map(async (field) => {
+      const mustLoadInputData = needsInputData(field);
+      let choices: NetBoxCustomFieldChoice[] = [];
+      let relatedObjects: DeviceCustomFieldDefinition["relatedObjects"] = [];
+      if (field.choice_set) {
+        try {
+          choices = await customFieldsApi.listChoices(field.choice_set.id);
+        } catch (error) {
+          if (mustLoadInputData) {
+            throw new Error(
+              `Não foi possível carregar as opções do campo “${field.label || field.name}”.`,
+              { cause: error },
+            );
+          }
+          // O campo continua visível mesmo se as opções não estiverem acessíveis.
+        }
+      }
+      if (field.related_object_type) {
+        const objectType = objectTypes.find(
+          (item) =>
+            `${item.app_label}.${item.model}` === field.related_object_type,
+        );
+        if (objectType?.rest_api_endpoint) {
+          const filters =
+            typeof field.related_object_filter === "object" &&
+            field.related_object_filter !== null
+              ? Object.fromEntries(
+                  Object.entries(field.related_object_filter).map(
+                    ([key, value]) => [key, String(value)],
+                  ),
+                )
+              : {};
           try {
-            choices = await customFieldsApi.listChoices(field.choice_set.id);
-          } catch {
-            // O campo continua visível mesmo se as opções não estiverem acessíveis.
-          }
-        }
-        if (field.related_object_type) {
-          const objectType = objectTypes.find(
-            (item) =>
-              `${item.app_label}.${item.model}` === field.related_object_type,
-          );
-          if (objectType?.rest_api_endpoint) {
-            const filters =
-              typeof field.related_object_filter === "object" &&
-              field.related_object_filter !== null
-                ? Object.fromEntries(
-                    Object.entries(field.related_object_filter).map(
-                      ([key, value]) => [key, String(value)],
-                    ),
-                  )
-                : {};
-            try {
-              relatedObjects = await customFieldsApi.listRelatedObjects(
-                objectType.rest_api_endpoint,
-                filters,
+            relatedObjects = await customFieldsApi.listRelatedObjects(
+              objectType.rest_api_endpoint,
+              filters,
+            );
+          } catch (error) {
+            if (mustLoadInputData) {
+              throw new Error(
+                `Não foi possível carregar os objetos do campo “${field.label || field.name}”.`,
+                { cause: error },
               );
-            } catch {
-              // Mantém o valor atual disponível em modo de consulta.
             }
+            // Mantém o valor atual disponível em modo de consulta.
           }
+        } else if (mustLoadInputData) {
+          throw new Error(
+            `Não foi possível identificar o tipo de objeto do campo “${field.label || field.name}”.`,
+          );
         }
-        return { ...field, choices, relatedObjects };
-      }),
-    );
-  },
+      }
+      return { ...field, choices, relatedObjects };
+    }),
+  );
+}
+
+export const customFieldsService = {
+  listForDevices: () => loadDeviceCustomFields(false),
+  listForDeviceCreation: () => loadDeviceCustomFields(true),
 };
 
 /**
@@ -141,7 +183,7 @@ export function mapManufacturers(
     id: String(item.id),
     name: item.name ?? item.display,
     description: item.description || "Sem descrição",
-    detail: `${item.device_type_count ?? 0} tipo(s) de dispositivo`,
+    detail: `${item.device_type_count ?? 0} tipo(s) de equipamento`,
   }));
 }
 

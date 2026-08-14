@@ -10,6 +10,13 @@ type ScannerProps = {
 
 type ScannerStatus = "ready" | "starting" | "scanning" | "result" | "error";
 
+function equipmentIdFromQrCode(value: string) {
+  const normalized = value.trim();
+  if (!/^\d+$/.test(normalized)) return null;
+  const id = Number(normalized);
+  return Number.isSafeInteger(id) && id > 0 ? String(id) : null;
+}
+
 export default function Scanner({ onBack, onOpenDevice }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -61,17 +68,25 @@ export default function Scanner({ onBack, onOpenDevice }: ScannerProps) {
         });
 
         if (code?.data) {
-          setResult(code.data);
+          const equipmentId = equipmentIdFromQrCode(code.data);
+          setResult(code.data.trim());
           setStatus("result");
-          setMessage("QR code lido com sucesso.");
           stopCamera();
+          if (equipmentId) {
+            setMessage("Equipamento identificado. Abrindo informações…");
+            onOpenDevice(equipmentId);
+          } else {
+            setMessage(
+              "Este QR code não contém um ID de equipamento válido.",
+            );
+          }
           return;
         }
       }
     }
 
     animationFrameRef.current = requestAnimationFrame(scanFrame);
-  }, [stopCamera]);
+  }, [onOpenDevice, stopCamera]);
 
   const startCamera = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -176,16 +191,10 @@ export default function Scanner({ onBack, onOpenDevice }: ScannerProps) {
         {status === "result" ? (
           <div className="scanner__result">
             <span className="scanner__result-label">
-              ✓ QR code identificado
+              QR code não reconhecido
             </span>
             <strong>{result}</strong>
-            <button
-              className="page-button"
-              type="button"
-              onClick={() => onOpenDevice(result.trim())}
-            >
-              Abrir dispositivo
-            </button>
+            <p>{message}</p>
             <button className="page-button" type="button" onClick={scanAgain}>
               Escanear novamente
             </button>

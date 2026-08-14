@@ -240,6 +240,7 @@ export default function App() {
       ...(input.rackId && input.position ? { face: "front" } : {}),
       status: "active",
       description: input.description,
+      custom_fields: input.customFields,
     });
     await refresh();
     setPage("devices");
@@ -441,7 +442,7 @@ export default function App() {
             setSelectedDevice(device);
             setPage("object-info");
           } else {
-            setAppError(`Nenhum dispositivo com o ID ${id} foi encontrado.`);
+            setAppError(`Nenhum equipamento com o ID ${id} foi encontrado.`);
             setPage("devices");
           }
         }}
@@ -516,6 +517,7 @@ export default function App() {
         roles={data.deviceRoles}
         deviceTypes={data.deviceTypes}
         racks={data.racks}
+        loadCustomFields={netbox.customFields.listForDeviceCreation}
         onCreate={createDevice}
         onCreateRole={(name, color) =>
           createRole(name, { name, description: "", color })

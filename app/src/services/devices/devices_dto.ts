@@ -140,6 +140,7 @@ export const deviceCreateSchema = z
     face: z.enum(["front", "rear"]).optional(),
     status: z.string().min(1),
     description: z.string().trim().max(200),
+    custom_fields: z.record(z.string(), z.unknown()).optional(),
   })
   .superRefine((value, context) => {
     if (value.position && !value.rack) {

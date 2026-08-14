@@ -62,7 +62,7 @@ export default function Devices({
       setError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Não foi possível excluir os dispositivos.",
+          : "Não foi possível excluir os equipamentos.",
       );
     } finally {
       setIsDeleting(false);
@@ -72,16 +72,16 @@ export default function Devices({
   return (
     <PageShell
       className="devices-page"
-      eyebrow="Dispositivos"
-      title="Seus dispositivos"
+      eyebrow="Equipamentos"
+      title="Seus equipamentos"
       subtitle="Consulte os equipamentos cadastrados no datacenter."
     >
       <section
         className="devices__heading"
-        aria-label="Resumo dos dispositivos"
+        aria-label="Resumo dos equipamentos"
       >
         <div>
-          <h2>Dispositivos cadastrados</h2>
+          <h2>Equipamentos cadastrados</h2>
           <p>Equipamentos disponíveis para consulta</p>
         </div>
         <div className="devices__actions">
@@ -89,7 +89,7 @@ export default function Devices({
             <button
               className="devices__add-button"
               type="button"
-              aria-label="Adicionar dispositivo"
+              aria-label="Adicionar equipamento"
               onClick={onAdd}
             >
               <span aria-hidden="true">+</span>
@@ -118,7 +118,7 @@ export default function Devices({
       >
         <div className="devices__search-heading">
           <div>
-            <h2 id="devices-search-title">Buscar dispositivo</h2>
+            <h2 id="devices-search-title">Buscar equipamento</h2>
             <p>Escolha como deseja pesquisar.</p>
           </div>
           {normalizedSearchTerm ? (
@@ -128,7 +128,7 @@ export default function Devices({
         <div
           className="devices__search-modes"
           role="group"
-          aria-label="Pesquisar dispositivo por"
+          aria-label="Pesquisar equipamento por"
         >
           <button
             className={
@@ -158,7 +158,7 @@ export default function Devices({
         <label className="devices__search-field">
           <span className="devices__search-icon" aria-hidden="true" />
           <span className="devices__search-label">
-            {searchBy === "id" ? "ID do dispositivo" : "Nome do dispositivo"}
+            {searchBy === "id" ? "ID do equipamento" : "Nome do equipamento"}
           </span>
           <input
             type="search"
@@ -212,11 +212,11 @@ export default function Devices({
         </article>
       ))}
       {items.length === 0 ? (
-        <p className="devices__empty">Nenhum dispositivo cadastrado.</p>
+        <p className="devices__empty">Nenhum equipamento cadastrado.</p>
       ) : null}
       {items.length > 0 && filteredItems.length === 0 ? (
         <p className="devices__empty">
-          Nenhum dispositivo encontrado por{" "}
+          Nenhum equipamento encontrado por{" "}
           {searchBy === "id" ? "esse ID" : "esse nome"}.
         </p>
       ) : null}
@@ -239,9 +239,9 @@ export default function Devices({
             <span className="devices__confirmation-icon" aria-hidden="true">
               !
             </span>
-            <h2 id="delete-title">Excluir dispositivos?</h2>
+            <h2 id="delete-title">Excluir equipamentos?</h2>
             <p>
-              Você selecionou {selectedIds.size} dispositivo(s). Essa ação não
+              Você selecionou {selectedIds.size} equipamento(s). Essa ação não
               poderá ser desfeita.
             </p>
             <div className="devices__confirmation-actions">

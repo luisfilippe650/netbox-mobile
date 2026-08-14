@@ -79,7 +79,12 @@ export default function CustomFieldInput({
   if (!editable) {
     return (
       <div className="object-info__field">
-        <span>{label}</span>
+        <span>
+          {label}
+          {field.required ? (
+            <span className="object-info__required"> *</span>
+          ) : null}
+        </span>
         <div className="object-info__field-value">
           {field.type.value === "json" ? (
             <pre>{formatValue(value, field.type.value)}</pre>
@@ -102,7 +107,9 @@ export default function CustomFieldInput({
   if (type === "longtext" || type === "json") {
     const textValue =
       type === "json" && typeof value !== "string"
-        ? JSON.stringify(value ?? null, null, 2)
+        ? hasCustomFieldValue(value)
+          ? JSON.stringify(value, null, 2)
+          : ""
         : String(value ?? "");
     control = (
       <textarea
@@ -121,7 +128,9 @@ export default function CustomFieldInput({
           onChange(event.target.value === "" ? null : event.target.value === "true")
         }
       >
-        {!field.required ? <option value="">Não informado</option> : null}
+        <option value="" disabled={field.required}>
+          {field.required ? "Selecione uma opção" : "Não informado"}
+        </option>
         <option value="true">Sim</option>
         <option value="false">Não</option>
       </select>
@@ -163,8 +172,10 @@ export default function CustomFieldInput({
           )
         }
       >
-        {type === "select" && !field.required ? (
-          <option value="">Não informado</option>
+        {type === "select" ? (
+          <option value="" disabled={field.required}>
+            {field.required ? "Selecione uma opção" : "Não informado"}
+          </option>
         ) : null}
         {choices.map(([choiceValue, choiceLabel]) => (
           <option key={serialize(choiceValue)} value={serialize(choiceValue)}>
@@ -196,8 +207,10 @@ export default function CustomFieldInput({
           )
         }
       >
-        {type === "object" && !field.required ? (
-          <option value="">Não informado</option>
+        {type === "object" ? (
+          <option value="" disabled={field.required}>
+            {field.required ? "Selecione um objeto" : "Não informado"}
+          </option>
         ) : null}
         {options.map((option) => (
           <option key={option.id} value={option.id}>

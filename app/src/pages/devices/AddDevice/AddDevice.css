@@ -150,6 +150,57 @@
   font-size: 0.78rem;
   font-weight: 700;
 }
+
+.add-device__custom-fields-status,
+.add-device__required-notice {
+  margin: 0;
+  color: var(--secondary-font-color);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+.add-device__required-notice {
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 700;
+}
+.add-device__custom-field {
+  display: grid;
+  gap: 10px;
+}
+.add-device__custom-field h3 {
+  margin: 4px 0 0;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--primary-color);
+  font-size: 0.78rem;
+}
+.add-device__custom-field .object-info__field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.add-device__custom-field .object-info__field > span {
+  color: var(--font-color);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.add-device__custom-field .object-info__field small {
+  color: var(--secondary-font-color);
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+.add-device__custom-field .object-info__field input,
+.add-device__custom-field .object-info__field select,
+.add-device__custom-field .object-info__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+.add-device__custom-field .object-info__field select[multiple] {
+  min-height: 110px;
+}
 .add-device__save:disabled {
   opacity: 0.65;
   cursor: wait;

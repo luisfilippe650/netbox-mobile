@@ -17,7 +17,7 @@ export function mapSites(items: NetBoxSite[]): OrganizationSummary[] {
     id: String(item.id),
     name: item.name ?? item.display,
     description: item.description || 'Sem descrição',
-    detail: `${item.rack_count} rack(s) · ${item.device_count} dispositivo(s)`,
+    detail: `${item.rack_count} rack(s) · ${item.device_count} equipamento(s)`,
     region: item.region?.name ?? item.region?.display ?? 'Não informada',
     regionId: item.region?.id ?? null,
     tenant: item.tenant?.name ?? item.tenant?.display ?? 'Não informado',
@@ -34,7 +34,7 @@ export function mapLocations(items: NetBoxLocation[]): OrganizationSummary[] {
     id: String(item.id),
     name: item.name ?? item.display,
     description: item.description || 'Sem descrição',
-    detail: `${item.rack_count} rack(s) · ${item.device_count} dispositivo(s)`,
+    detail: `${item.rack_count} rack(s) · ${item.device_count} equipamento(s)`,
     site: item.site.name ?? item.site.display,
     siteId: item.site.id,
   }))

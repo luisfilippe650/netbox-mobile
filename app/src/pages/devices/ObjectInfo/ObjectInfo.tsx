@@ -9,7 +9,10 @@ import type {
 import type { OrganizationItem } from "../../organization/OrganizationList/OrganizationList";
 import type { DeviceSummary } from "../shared/devices-data";
 import CustomFieldInput from "./CustomFieldInput";
-import { hasCustomFieldValue } from "./custom-field-utils";
+import {
+  hasCustomFieldValue,
+  normalizeCustomFieldValue,
+} from "./custom-field-utils";
 import "./ObjectInfo.css";
 
 type ObjectInfoProps = {
@@ -23,39 +26,6 @@ type ObjectInfoProps = {
     changedCustomFields: Record<string, unknown>,
   ) => Promise<DeviceSummary>;
 };
-
-function relatedObjectId(value: unknown) {
-  if (typeof value === "number") return value;
-  if (typeof value === "object" && value !== null && "id" in value)
-    return Number((value as { id: unknown }).id);
-  return value;
-}
-
-function normalizeCustomFieldValue(
-  field: DeviceCustomFieldDefinition,
-  value: unknown,
-) {
-  if (!hasCustomFieldValue(value)) return null;
-  if (field.type.value === "integer" || field.type.value === "decimal")
-    return Number(value);
-  if (field.type.value === "json" && typeof value === "string") {
-    try {
-      return JSON.parse(value) as unknown;
-    } catch {
-      throw new Error(
-        `O campo “${field.label || field.name}” não contém um JSON válido.`,
-      );
-    }
-  }
-  if (field.type.value === "datetime" && typeof value === "string") {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : date.toISOString();
-  }
-  if (field.type.value === "object") return relatedObjectId(value);
-  if (field.type.value === "multiobject" && Array.isArray(value))
-    return value.map(relatedObjectId);
-  return value;
-}
 
 function valuesMatch(left: unknown, right: unknown) {
   return JSON.stringify(left) === JSON.stringify(right);
@@ -211,15 +181,15 @@ export default function ObjectInfo({
     if (!qrCodeUrl) return;
     const link = document.createElement("a");
     link.href = qrCodeUrl;
-    link.download = `dispositivo-${device.id}-qr-code.png`;
+    link.download = `equipamento-${device.id}-qr-code.png`;
     link.click();
   };
 
   return (
     <PageShell
       className="object-info-page"
-      eyebrow={`Dispositivo · ID ${device.id}`}
-      title="Informações do dispositivo"
+      eyebrow={`Equipamento · ID ${device.id}`}
+      title="Informações do equipamento"
       subtitle="Consulte os dados do equipamento ou ative a personalização para editá-los."
     >
       <section className="object-info__toolbar">
@@ -343,7 +313,7 @@ export default function ObjectInfo({
 
         <section className="object-info__card">
           <div className="object-info__section-title">
-            <h2>Rede e tipo do dispositivo</h2>
+            <h2>Rede e tipo do equipamento</h2>
             <p>Informações técnicas somente para consulta.</p>
           </div>
 
@@ -359,7 +329,7 @@ export default function ObjectInfo({
           </div>
 
           <label className="object-info__field">
-            <span>Tipo do dispositivo</span>
+            <span>Tipo do equipamento</span>
             <input value={draft.deviceType} readOnly />
             <small>O tipo é exibido apenas para consulta nesta tela.</small>
           </label>
@@ -384,7 +354,7 @@ export default function ObjectInfo({
         <section className="object-info__card">
           <div className="object-info__section-title">
             <h2>Localização</h2>
-            <p>Posição atual do dispositivo na infraestrutura.</p>
+            <p>Posição atual do equipamento na infraestrutura.</p>
           </div>
 
           <label className="object-info__field">
@@ -553,18 +523,18 @@ export default function ObjectInfo({
             <span className="object-info__qr-icon" aria-hidden="true">
               ▦
             </span>
-            <h2 id="object-qr-title">QR Code do dispositivo</h2>
+            <h2 id="object-qr-title">QR Code do equipamento</h2>
             <p>
               O código contém o ID <strong>{device.id}</strong>.
             </p>
             <div className="object-info__qr-image">
               <img
                 src={qrCodeUrl}
-                alt={`QR Code do dispositivo ${device.id}`}
+                alt={`QR Code do equipamento ${device.id}`}
               />
             </div>
             <small>
-              Use o scanner do aplicativo para identificar este dispositivo.
+              Use o scanner do aplicativo para identificar este equipamento.
             </small>
             <div className="object-info__qr-actions">
               <button type="button" onClick={() => setQrCodeUrl("")}>

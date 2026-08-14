@@ -60,7 +60,7 @@ export default function DeviceTypes({
       setError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Não foi possível excluir os tipos de dispositivos.",
+          : "Não foi possível excluir os tipos de equipamentos.",
       );
     } finally {
       setIsDeleting(false);
@@ -70,14 +70,14 @@ export default function DeviceTypes({
   return (
     <PageShell
       className="organization-page"
-      eyebrow="Dispositivos"
-      title="Tipos de dispositivos"
+      eyebrow="Equipamentos"
+      title="Tipos de equipamentos"
       subtitle="Consulte e gerencie os modelos disponíveis no datacenter."
     >
       <label className="organization__search">
         <span className="organization__search-icon" aria-hidden="true" />
         <span className="organization__search-label">
-          Tipos de dispositivos
+          Tipos de equipamentos
         </span>
         <input
           type="search"
@@ -94,7 +94,7 @@ export default function DeviceTypes({
 
       <section
         className="organization__heading"
-        aria-label="Resumo dos tipos de dispositivos"
+        aria-label="Resumo dos tipos de equipamentos"
       >
         <div>
           <h2>Tipos cadastrados</h2>
@@ -162,7 +162,7 @@ export default function DeviceTypes({
                 <small>
                   <span>
                     {manufacturer} · {item.u_height}U · {item.device_count}{" "}
-                    dispositivo(s)
+                    equipamento(s)
                   </span>
                 </small>
               </div>
@@ -174,7 +174,7 @@ export default function DeviceTypes({
       {filteredItems.length === 0 ? (
         <section className="organization__empty" role="status">
           <span aria-hidden="true">⌕</span>
-          <strong>Nenhum tipo de dispositivo encontrado</strong>
+          <strong>Nenhum tipo de equipamento encontrado</strong>
           <p>Tente buscar usando outro modelo ou fabricante.</p>
         </section>
       ) : null}
@@ -202,7 +202,7 @@ export default function DeviceTypes({
             </span>
             <div>
               <h2 id="device-type-details-title">
-                Informações do tipo de dispositivo
+                Informações do tipo de equipamento
               </h2>
               <p>ID {selectedItem.id}</p>
             </div>
@@ -227,7 +227,7 @@ export default function DeviceTypes({
                 <dd>{selectedItem.u_height}U</dd>
               </div>
               <div>
-                <dt>Dispositivos</dt>
+                <dt>Equipamentos</dt>
                 <dd>{selectedItem.device_count}</dd>
               </div>
               <div>
@@ -261,7 +261,7 @@ export default function DeviceTypes({
               !
             </span>
             <h2 id="device-type-delete-title">
-              Excluir tipo(s) de dispositivo?
+              Excluir tipo(s) de equipamento?
             </h2>
             <p>
               Você selecionou {selectedIds.size} item(ns). Essa ação não poderá

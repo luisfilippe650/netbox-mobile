@@ -20,12 +20,12 @@ export default function DeviceFunctions({
   return (
     <OrganizationList
       objectType="dcim.devicerole"
-      singular="Função de dispositivo"
-      title="Funções de dispositivos"
-      subtitle="Crie e gerencie as funções usadas nos dispositivos."
+      singular="Função de equipamento"
+      title="Funções de equipamentos"
+      subtitle="Crie e gerencie as funções usadas nos equipamentos."
       sectionTitle="Funções cadastradas"
       searchLabel="Funções"
-      emptyMessage="Nenhuma função de dispositivo encontrada"
+      emptyMessage="Nenhuma função de equipamento encontrada"
       items={items}
       onCreate={onCreate}
       onDelete={onDelete}

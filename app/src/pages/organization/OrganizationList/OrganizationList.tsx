@@ -84,7 +84,7 @@ export function OrganizationList({
   const [error, setError] = useState("");
   const isSitePage = singular === "Site";
   const isLocationPage = singular === "Local";
-  const isDeviceFunctionPage = singular === "Função de dispositivo";
+  const isDeviceFunctionPage = singular === "Função de equipamento";
   const isRackFunctionPage = singular === "Função de rack";
   const hasRoleColor = isDeviceFunctionPage || isRackFunctionPage;
   const hasDetails = isSitePage || isLocationPage;
