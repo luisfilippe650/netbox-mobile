@@ -44,6 +44,11 @@ export type NetBoxData = {
   regions: NetBoxRegion[];
 };
 
+/**
+ * Carrega em paralelo os catálogos necessários para montar a tela principal.
+ * A promessa falha por inteiro se qualquer catálogo não puder ser carregado,
+ * impedindo que a UI trabalhe com um conjunto de dados parcialmente coerente.
+ */
 export async function loadNetBoxData(): Promise<NetBoxData> {
   const [
     devices,

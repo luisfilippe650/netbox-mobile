@@ -10,6 +10,7 @@ function readStoredToken(): NetBoxToken | null {
     if (!result.success) sessionStorage.removeItem(sessionKey);
     return result.success ? result.data : null;
   } catch {
+    sessionStorage.removeItem(sessionKey);
     return null;
   }
 }

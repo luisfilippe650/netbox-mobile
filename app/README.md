@@ -70,7 +70,7 @@ VITE_NETBOX_API_URL=http://localhost:8000/api
 VITE_NETBOX_REQUEST_TIMEOUT_MS=15000
 ```
 
-No navegador local, `localhost` aponta para o computador. Em um celular físico, use o IP do computador acessível pela rede, por exemplo `http://192.168.1.20:8000/api`. No emulador Android, normalmente use `http://10.0.2.2:8000/api`.
+No navegador local, `localhost` aponta para o computador. Em um celular físico, use o IP do computador acessível pela rede; no emulador Android, normalmente use `10.0.2.2`. Builds de produção exigem HTTPS fora do próprio aparelho. Para um teste temporário via HTTP em rede controlada, defina `VITE_ALLOW_INSECURE_HTTP=true` e execute a sincronização do APK com `CAPACITOR_ALLOW_CLEARTEXT=true`.
 
 O arquivo `.env` é local e ignorado pelo Git. Nunca grave usuário, senha ou token nele. O aplicativo provisiona um token v2 após o login e o mantém apenas em `sessionStorage`; no logout, tenta revogar o token no NetBox.
 
@@ -231,9 +231,9 @@ Restrições condicionais configuradas nas Object Permissions continuam sendo av
 
 ## Segurança e aplicativo móvel
 
-A configuração atual permite HTTP claro somente para desenvolvimento com a instância local. Em produção:
+A configuração bloqueia HTTP claro por padrão. Em produção:
 
 1. publique o NetBox com HTTPS;
 2. altere `VITE_NETBOX_API_URL` para a URL HTTPS;
-3. remova `cleartext: true` do `capacitor.config.ts`;
-4. mantenha o CORS restrito aos origins efetivamente usados pelo aplicativo.
+3. não habilite `VITE_ALLOW_INSECURE_HTTP` nem `CAPACITOR_ALLOW_CLEARTEXT`;
+4. mantenha o CORS restrito às origens efetivamente usadas pelo aplicativo.

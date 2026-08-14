@@ -175,7 +175,11 @@ export default function App() {
       setAppError("");
       setPage("home");
     } catch (error) {
-      netboxClient.clearSession();
+      try {
+        await netboxClient.logout();
+      } catch {
+        // O service já limpa a sessão local mesmo se a revogação remota falhar.
+      }
       clearSessionAccess();
       throw error;
     }

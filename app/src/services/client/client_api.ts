@@ -20,21 +20,45 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   authenticated?: boolean;
 };
 
+/**
+ * Resolve caminhos relativos dentro da API configurada e rejeita URLs que
+ * tentem sair de sua origem ou caminho-base. Isso impede que links de
+ * paginação encaminhem o token para outro servidor ou outra aplicação.
+ */
+function resolveApiUrl(path: string) {
+  let url: URL;
+  try {
+    url = path.startsWith("http://") || path.startsWith("https://")
+      ? new URL(path)
+      : new URL(path.replace(/^\/+/, ""), `${netboxConfig.apiUrl}/`);
+  } catch {
+    throw new NetBoxApiError("A API retornou um endereço inválido.", 0);
+  }
+
+  const belongsToConfiguredApi =
+    url.origin === netboxConfig.apiOrigin &&
+    url.pathname.startsWith(netboxConfig.apiBasePath);
+  if (!belongsToConfiguredApi || url.username || url.password) {
+    throw new NetBoxApiError(
+      "A API tentou redirecionar a requisição para um endereço não autorizado.",
+      0,
+    );
+  }
+  return url;
+}
+
 class NetBoxApiClient {
   private async request<T>(
     path: string,
     options: RequestOptions = {},
     responseSchema?: z.ZodType<T>,
   ): Promise<T> {
+    const url = resolveApiUrl(path);
     const controller = new AbortController();
     const timeout = window.setTimeout(
       () => controller.abort(),
       netboxConfig.requestTimeoutMs,
     );
-    const url =
-      path.startsWith("http://") || path.startsWith("https://")
-        ? path
-        : `${netboxConfig.apiUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
     const headers = new Headers(options.headers);
     headers.set("Accept", "application/json");
@@ -49,7 +73,13 @@ class NetBoxApiClient {
         ...options,
         body:
           options.body === undefined ? undefined : JSON.stringify(options.body),
+        cache: "no-store",
+        credentials: "omit",
         headers,
+        referrerPolicy: "no-referrer",
+        // Redirecionamentos devem ser corrigidos no NetBox/proxy; segui-los
+        // poderia transportar a requisição autenticada para outro endereço.
+        redirect: "error",
         signal: controller.signal,
       });
 
