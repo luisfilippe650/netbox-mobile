@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { PageShell } from "../../components/PageShell/PageShell";
 import coidsLogo from "../../assets/logos/logo-coids.png";
-import type { NetBoxManufacturer } from "../../services/netbox";
+import type { NetBoxManufacturer } from "../../services";
 import "./add-device-type.css";
 
 export type DeviceTypeCreateInput = { manufacturerId: number; model: string; description: string; height: number };

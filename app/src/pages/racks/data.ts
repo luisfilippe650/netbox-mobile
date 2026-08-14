@@ -15,6 +15,7 @@ export type RackSummary = {
   site: string;
   location: string;
   group: string;
+  role: string;
   height: number;
   width: number;
   devices: readonly RackDevice[];

@@ -9,19 +9,21 @@ Os DTOs de entrada e as respostas da API são validados em runtime com Zod. Os t
 ```text
 src/services/
 ├── client/
-│   ├── client.ts          # Transporte HTTP, paginação e métodos REST
-│   ├── config.ts          # Configuração centralizada da API
-│   ├── errors.ts          # Normalização dos erros HTTP e Zod
-│   ├── session.ts         # Token e sessão
-│   └── schemas/           # Um schema por recurso/rota
-└── netbox/
-    ├── modules/           # Um módulo CRUD por endpoint
-    ├── load-data.ts       # Carregamento inicial coordenado
-    ├── mappers.ts         # Conversão API → modelos da interface
-    └── types.ts           # Tipos inferidos dos schemas Zod
+│   ├── client_api.ts      # Transporte HTTP, paginação e métodos REST
+│   ├── client_dto.ts      # Contratos comuns, autenticação e token
+│   ├── client_service.ts  # Fachada pública e fluxo de autenticação
+│   ├── client_config.ts   # Configuração centralizada da API
+│   ├── client_errors.ts   # Normalização dos erros HTTP e Zod
+│   └── client_session.ts  # Armazenamento e autorização do token
+├── devices/               # Dispositivos, tipos, funções e fabricantes
+├── racks/                 # Racks e grupos de racks
+├── sites/                 # Sites, locais e regiões
+├── load-data.ts           # Carregamento inicial coordenado
+├── view_models.ts         # Modelos normalizados consumidos pela interface
+└── index.ts               # Fachada pública dos serviços
 ```
 
-Por exemplo, toda manutenção de `/api/dcim/devices/` fica em `netbox/modules/devices.ts`, enquanto sua validação fica em `client/schemas/device.ts`.
+Cada domínio repete três responsabilidades explícitas: `*_dto.ts` contém schemas Zod e tipos inferidos, `*_api.ts` concentra endpoints e chamadas HTTP, e `*_service.ts` expõe a fachada e os mapeamentos usados pela aplicação. Por exemplo, toda manutenção de `/api/dcim/devices/` fica em `services/devices/`.
 
 ## Configuração
 

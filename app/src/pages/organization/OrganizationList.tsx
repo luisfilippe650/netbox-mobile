@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { PageShell } from "../../components/PageShell/PageShell";
+import { defaultDeviceRoleColor, DeviceRoleColorPicker } from "../devices/DeviceRoleColorPicker";
 import "./organization.css";
 
 export type OrganizationItem = {
@@ -67,11 +68,14 @@ export function OrganizationList({
   const [newSite, setNewSite] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newVmRole, setNewVmRole] = useState("false");
+  const [newDeviceRoleColor, setNewDeviceRoleColor] = useState(defaultDeviceRoleColor);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const isSitePage = singular === "Site";
   const isLocationPage = singular === "Local";
   const isDeviceFunctionPage = singular === "Função de dispositivo";
+  const isRackFunctionPage = singular === "Função de rack";
+  const hasRoleColor = isDeviceFunctionPage || isRackFunctionPage;
   const hasDetails = isSitePage || isLocationPage;
   const organizationItems = items;
 
@@ -118,10 +122,11 @@ export function OrganizationList({
         name: newName.trim(), description: newDescription.trim(),
         ...(isSitePage && newRegion ? { regionId: Number(newRegion) } : {}),
         ...(isLocationPage ? { siteId: Number(newSite) } : {}),
-        ...(isDeviceFunctionPage ? { vmRole: newVmRole === "true", color: "9e9e9e" } : {}),
+        ...(hasRoleColor ? { color: newDeviceRoleColor } : {}),
+        ...(isDeviceFunctionPage ? { vmRole: newVmRole === "true" } : {}),
       });
       setNewName(""); setNewRegion(""); setNewSite(""); setNewDescription("");
-      setNewVmRole("false"); setShowAddForm(false);
+      setNewVmRole("false"); setNewDeviceRoleColor(defaultDeviceRoleColor); setShowAddForm(false);
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Não foi possível criar o item.");
     } finally {
@@ -221,7 +226,14 @@ export function OrganizationList({
                 <span>{item.id}</span>
               </div>
               <p>{item.description}</p>
-              <small>{item.detail}</small>
+              <small>
+                <span>{item.detail}</span>
+                {item.color ? (
+                  <span className="organization__role-color" aria-label="Cor da função">
+                    <i style={{ backgroundColor: `#${item.color}` }} aria-hidden="true" />
+                  </span>
+                ) : null}
+              </small>
             </div>
           </article>
         ))}
@@ -300,8 +312,8 @@ export function OrganizationList({
                   value={newVmRole}
                   onChange={(event) => setNewVmRole(event.target.value)}
                 >
-                  <option value="false">Falso</option>
-                  <option value="true">Verdadeiro</option>
+                  <option value="false">Não</option>
+                  <option value="true">Sim</option>
                 </select>
               </label>
             ) : null}
@@ -313,11 +325,8 @@ export function OrganizationList({
                 placeholder="Descrição opcional"
               />
             </label>
-            {isDeviceFunctionPage ? (
-              <label>
-                <span>Cor</span>
-                <input value="Cinza" readOnly aria-readonly="true" />
-              </label>
+            {hasRoleColor ? (
+              <DeviceRoleColorPicker value={newDeviceRoleColor} onChange={setNewDeviceRoleColor} disabled={isSubmitting} />
             ) : null}
             <div className="organization__modal-actions">
               <button type="button" onClick={() => setShowAddForm(false)}>

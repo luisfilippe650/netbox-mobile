@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import QRCode from "qrcode";
 import { PageShell } from "../../components/PageShell/PageShell";
-import type { NetBoxRack } from "../../services/netbox";
+import type { NetBoxRack } from "../../services";
 import type { OrganizationItem } from "../organization/OrganizationList";
 import type { DeviceSummary } from "./devices-data";
 import "./object-info.css";

@@ -1,4 +1,4 @@
-export { netboxClient } from './client'
-export { netboxConfig } from './config'
-export { NetBoxApiError } from './errors'
-export * from './schemas'
+export { netboxClient } from './client_service'
+export { netboxConfig } from './client_config'
+export { NetBoxApiError } from './client_errors'
+export * from './client_dto'

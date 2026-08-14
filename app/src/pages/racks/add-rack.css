@@ -101,6 +101,42 @@
   gap: 10px;
 }
 
+.add-rack__related {
+  display: grid;
+  gap: 7px;
+}
+.add-rack__create-related {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary-color);
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.add-rack__quick-create {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(11, 86, 197, 0.18);
+  border-radius: 15px;
+  background: rgba(11, 86, 197, 0.035);
+}
+.add-rack__quick-create > button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+.add-rack__quick-create > button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--primary-color);
+  color: var(--font-color-on-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .add-rack__save,
 .add-rack__back {
   width: 100%;

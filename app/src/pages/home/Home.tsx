@@ -7,16 +7,14 @@ import rackIcon from "../../assets/icons/criar_rack.png";
 import rowIcon from "../../assets/icons/row_icone.png";
 import coidsLogo from "../../assets/logos/logo-coids.png";
 import inpeLogo from "../../assets/logos/Logo_INPE_maior.jpg";
-import type { NetBoxDeviceType, NetBoxRack, NetBoxRackGroup } from "../../services/netbox";
+import type { NetBoxRack } from "../../services";
 import type { DeviceSummary } from "../devices/devices-data";
 import "./home.css";
 
 type HomeProps = {
   onLogout: () => void;
   devices: readonly DeviceSummary[];
-  deviceTypes: readonly NetBoxDeviceType[];
   racks: readonly NetBoxRack[];
-  rackGroups: readonly NetBoxRackGroup[];
   onSelectDevice: (device: DeviceSummary) => void;
   onDelete: (kind: DeleteKind, id: number) => Promise<void>;
   onOpenPage: (
@@ -25,11 +23,14 @@ type HomeProps = {
       | "devices"
       | "add-device"
       | "add-device-type"
+      | "device-types"
       | "manufacturers"
       | "device-functions"
       | "rack-info"
       | "add-rack"
       | "add-rack-group"
+      | "rack-groups"
+      | "rack-roles"
       | "sites"
       | "locations"
       | "regions",
@@ -49,12 +50,15 @@ type HomePage =
   | "devices"
   | "add-device"
   | "add-device-type"
+  | "device-types"
   | "manufacturers"
   | "device-functions"
   | "device"
   | "rack-info"
   | "add-rack"
   | "add-rack-group"
+  | "rack-groups"
+  | "rack-roles"
   | "organizacao"
   | "sites"
   | "locations"
@@ -71,7 +75,7 @@ type ActionOption = {
   tone?: "success" | "danger";
 };
 
-export type DeleteKind = "device" | "device-type" | "rack" | "rack-group";
+export type DeleteKind = "rack";
 
 const actions: readonly HomeAction[] = [
   {
@@ -96,28 +100,17 @@ const actions: readonly HomeAction[] = [
 
 const deviceOptions: readonly ActionOption[] = [
   { label: "Visualizar dispositivos", page: "devices" },
+  { label: "Adicionar dispositivos", page: "add-device", tone: "success" },
   { label: "Fabricantes", page: "manufacturers" },
   { label: "Funções de dispositivos", page: "device-functions" },
-  { label: "Adicionar dispositivos", page: "add-device", tone: "success" },
-  {
-    label: "Adicionar tipo de dispositivo",
-    page: "add-device-type",
-    tone: "success",
-  },
-  { label: "Deletar dispositivos", tone: "danger" },
-  { label: "Deletar tipos de dispositivos", tone: "danger" },
+  { label: "Tipos de dispositivos", page: "device-types" },
 ];
 
 const rackOptions: readonly ActionOption[] = [
   { label: "Visualizar racks", page: "rack-info" },
   { label: "Adicionar rack", page: "add-rack", tone: "success" },
-  {
-    label: "Adicionar grupo de racks",
-    page: "add-rack-group",
-    tone: "success",
-  },
-  { label: "Deletar rack", tone: "danger" },
-  { label: "Deletar grupo de rack", tone: "danger" },
+  { label: "Grupos de racks", page: "rack-groups" },
+  { label: "Funções de racks", page: "rack-roles" },
 ];
 
 const organizationOptions: readonly ActionOption[] = [
@@ -129,9 +122,7 @@ const organizationOptions: readonly ActionOption[] = [
 export default function Home({
   onLogout,
   devices,
-  deviceTypes,
   racks,
-  rackGroups,
   onSelectDevice,
   onDelete,
   onOpenPage,
@@ -160,15 +151,9 @@ export default function Home({
           .includes(normalizedDeviceSearch);
       })
     : [];
-  const deleteOptions = deleteKind === "device"
-    ? devices.map((item) => ({ id: item.apiId, label: item.name }))
-    : deleteKind === "device-type"
-      ? deviceTypes.map((item) => ({ id: item.id, label: item.model }))
-      : deleteKind === "rack"
-        ? racks.map((item) => ({ id: item.id, label: item.name }))
-        : deleteKind === "rack-group"
-          ? rackGroups.map((item) => ({ id: item.id, label: item.name ?? item.display }))
-          : [];
+  const deleteOptions = deleteKind === "rack"
+    ? racks.map((item) => ({ id: item.id, label: item.name }))
+    : [];
   const deleteSelectionLabel = deleteOptions.find((item) => String(item.id) === deleteSelection)?.label ?? "";
 
   const openActionOptions = (action: HomeAction) => {
@@ -685,22 +670,8 @@ export default function Home({
                         key={option.label}
                         type="button"
                         onClick={() => {
-                          if (option.label === "Deletar dispositivos") {
-                            openDeleteSelection("device");
-                            return;
-                          }
-                          if (
-                            option.label === "Deletar tipos de dispositivos"
-                          ) {
-                            openDeleteSelection("device-type");
-                            return;
-                          }
                           if (option.label === "Deletar rack") {
                             openDeleteSelection("rack");
-                            return;
-                          }
-                          if (option.label === "Deletar grupo de rack") {
-                            openDeleteSelection("rack-group");
                             return;
                           }
                           if (option.page) onOpenPage(option.page);

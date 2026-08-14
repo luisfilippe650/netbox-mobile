@@ -1,21 +1,22 @@
-import { netboxConfig } from './config'
 import { z } from 'zod'
-import { apiErrorMessage, NetBoxApiError, parseWithSchema } from './errors'
-import { authorizationFor, readStoredToken, removeStoredToken, storeToken, type NetBoxToken } from './session'
-import { authenticationCheckSchema, emptyResponseSchema, loginInputSchema, paginatedSchema, tokenSchema } from './schemas'
+import { netboxConfig } from './client_config'
+import {
+  authenticationCheckSchema,
+  emptyResponseSchema,
+  paginatedSchema,
+  tokenSchema,
+  type LoginDto,
+  type NetBoxToken,
+} from './client_dto'
+import { apiErrorMessage, NetBoxApiError, parseWithSchema } from './client_errors'
+import { netboxSession } from './client_session'
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown
   authenticated?: boolean
 }
 
-class NetBoxClient {
-  private token = readStoredToken()
-
-  get isAuthenticated() {
-    return this.token !== null
-  }
-
+class NetBoxApiClient {
   private async request<T>(path: string, options: RequestOptions = {}, responseSchema?: z.ZodType<T>): Promise<T> {
     const controller = new AbortController()
     const timeout = window.setTimeout(() => controller.abort(), netboxConfig.requestTimeoutMs)
@@ -26,8 +27,8 @@ class NetBoxClient {
     const headers = new Headers(options.headers)
     headers.set('Accept', 'application/json')
     if (options.body !== undefined) headers.set('Content-Type', 'application/json')
-    if (options.authenticated !== false && this.token) {
-      headers.set('Authorization', authorizationFor(this.token))
+    if (options.authenticated !== false && netboxSession.authorization) {
+      headers.set('Authorization', netboxSession.authorization)
     }
 
     try {
@@ -48,7 +49,7 @@ class NetBoxClient {
       if (!response.ok) {
         const invalidAuthentication = response.status === 401
           || (response.status === 403 && /invalid (v1|v2) token|authentication credentials/i.test(JSON.stringify(payload)))
-        if (invalidAuthentication && options.authenticated !== false) this.clearSession()
+        if (invalidAuthentication && options.authenticated !== false) netboxSession.clear()
         throw new NetBoxApiError(
           apiErrorMessage(payload, `A API respondeu com status ${response.status}.`),
           response.status,
@@ -68,9 +69,8 @@ class NetBoxClient {
     }
   }
 
-  async login(username: string, password: string) {
-    const credentials = parseWithSchema(loginInputSchema, { username, password }, 'credenciais')
-    const token = await this.request<NetBoxToken>('/users/tokens/provision/', {
+  provisionToken(credentials: LoginDto) {
+    return this.request<NetBoxToken>('/users/tokens/provision/', {
       method: 'POST',
       authenticated: false,
       body: {
@@ -80,33 +80,10 @@ class NetBoxClient {
         description: 'NetBox Mobile',
       },
     }, tokenSchema)
-    this.token = token
-    storeToken(token)
   }
 
-  async restoreSession() {
-    if (!this.token) return false
-    try {
-      await this.request('/authentication-check/', {}, authenticationCheckSchema)
-      return true
-    } catch (error) {
-      if (!this.token) return false
-      throw error
-    }
-  }
-
-  async logout() {
-    const tokenId = this.token?.id
-    try {
-      if (tokenId) await this.delete(`/users/tokens/${tokenId}/`)
-    } finally {
-      this.clearSession()
-    }
-  }
-
-  clearSession() {
-    this.token = null
-    removeStoredToken()
+  checkAuthentication() {
+    return this.request('/authentication-check/', {}, authenticationCheckSchema)
   }
 
   async list<T>(path: string, itemSchema: z.ZodType<T>, parameters: Record<string, string | number | undefined> = {}) {
@@ -148,6 +125,4 @@ class NetBoxClient {
   }
 }
 
-export const netboxClient = new NetBoxClient()
-
-export { NetBoxApiError } from './errors'
+export const netboxApi = new NetBoxApiClient()

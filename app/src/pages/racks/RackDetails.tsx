@@ -46,6 +46,10 @@ export default function RackDetails({ rack, onBack }: RackDetailsProps) {
 
       <section className="rack-details__info">
         <div>
+          <span>Função</span>
+          <strong>{rack.role}</strong>
+        </div>
+        <div>
           <span>Grupo</span>
           <strong>{rack.group}</strong>
         </div>
