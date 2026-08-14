@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useAccess } from './context/AccessContext'
 import Login from './pages/login/Login'
 import Home, { type DeleteKind } from './pages/home/Home'
 import ScannerPage from './pages/scanner/Scanner'
@@ -43,6 +44,7 @@ type Page = 'login' | 'home' | 'scanner' | 'object-info' | 'devices' | 'device-t
 const emptyData: NetBoxData = { devices: [], deviceTypes: [], deviceRoles: [], manufacturers: [], racks: [], rackGroups: [], rackRoles: [], sites: [], locations: [], regions: [] }
 
 export default function App() {
+  const { clearSessionAccess, setSessionAccess } = useAccess()
   const [page, setPage] = useState<Page>('login')
   const [data, setData] = useState<NetBoxData>(emptyData)
   const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(null)
@@ -72,10 +74,24 @@ export default function App() {
     setPage(nextPage)
   }
 
+  const applySessionAccess = async (user: Awaited<ReturnType<typeof netboxClient.login>>) => {
+    let unrestricted = false
+    try {
+      const metadata = await netboxClient.options('/users/permissions/')
+      const actions = metadata.actions
+      unrestricted = typeof actions === 'object' && actions !== null && 'POST' in actions
+    } catch {
+      unrestricted = false
+    }
+    setSessionAccess(user, unrestricted)
+  }
+
   useEffect(() => {
     void (async () => {
       try {
-        if (await netboxClient.restoreSession()) {
+        const user = await netboxClient.restoreSession()
+        if (user) {
+          await applySessionAccess(user)
           await refresh()
           setPage('home')
         }
@@ -88,19 +104,22 @@ export default function App() {
   }, [])
 
   const login = async (username: string, password: string) => {
-    await netboxClient.login(username, password)
+    const user = await netboxClient.login(username, password)
     try {
+      await applySessionAccess(user)
       await refresh()
       setAppError('')
       setPage('home')
     } catch (error) {
       netboxClient.clearSession()
+      clearSessionAccess()
       throw error
     }
   }
 
   const logout = async () => {
     try { await netboxClient.logout() } catch { netboxClient.clearSession() }
+    clearSessionAccess()
     setData(emptyData); setSelectedDevice(null); setSelectedRack(null); setPage('login')
   }
 

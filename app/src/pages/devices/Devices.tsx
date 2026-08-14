@@ -1,6 +1,7 @@
 import { PageShell } from "../../components/PageShell/PageShell";
 import deviceIcon from "../../assets/icons/inserir_id_manualmente.png";
 import { useState } from "react";
+import { useAccess } from "../../context/AccessContext";
 import type { DeviceSummary } from "./devices-data";
 import "./devices.css";
 
@@ -19,6 +20,9 @@ export default function Devices({
   items,
   onDelete,
 }: DevicesProps) {
+  const { can } = useAccess();
+  const canAdd = can("dcim.device", "add");
+  const canDelete = can("dcim.device", "delete");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [searchBy, setSearchBy] = useState<"name" | "id">("name");
@@ -73,7 +77,7 @@ export default function Devices({
           <p>Equipamentos disponíveis para consulta</p>
         </div>
         <div className="devices__actions">
-          <button
+          {canAdd ? <button
             className="devices__add-button"
             type="button"
             aria-label="Adicionar dispositivo"
@@ -81,8 +85,8 @@ export default function Devices({
           >
             <span aria-hidden="true">+</span>
             Adicionar
-          </button>
-          {selectedIds.size > 0 ? (
+          </button> : null}
+          {canDelete && selectedIds.size > 0 ? (
             <button
               className="devices__delete-button"
               type="button"
@@ -162,7 +166,7 @@ export default function Devices({
             if (event.key === "Enter" || event.key === " ") onSelect(item);
           }}
         >
-          <label
+          {canDelete ? <label
             className="devices__select"
             aria-label={`Selecionar ${item.name}`}
             onClick={(event) => event.stopPropagation()}
@@ -173,7 +177,7 @@ export default function Devices({
               onChange={() => toggleSelection(item.id)}
             />
             <span aria-hidden="true" />
-          </label>
+          </label> : null}
           <div className="devices__card-top">
             <span className="devices__icon">
               <img src={deviceIcon} alt="" />

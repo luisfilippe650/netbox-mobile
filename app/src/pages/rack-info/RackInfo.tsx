@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { PageShell } from "../../components/PageShell/PageShell";
+import { useAccess } from "../../context/AccessContext";
 import rackIcon from "../../assets/icons/rack_medio.png";
 import { getOccupiedUnits, type RackSummary } from "../racks/data";
 import "../organization/organization.css";
@@ -14,6 +15,9 @@ type RackInfoProps = {
 };
 
 export default function RackInfo({ onBack, onAdd, onDelete, onSelect, items }: RackInfoProps) {
+  const { can } = useAccess();
+  const canAdd = can("dcim.rack", "add");
+  const canDelete = can("dcim.rack", "delete");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -70,8 +74,8 @@ export default function RackInfo({ onBack, onAdd, onDelete, onSelect, items }: R
       <section className="organization__heading" aria-label="Resumo dos racks">
         <div><h2>Racks cadastrados</h2><p>{filteredItems.length} rack(s) encontrado(s)</p></div>
         <div className="organization__actions">
-          <button className="organization__add" type="button" onClick={onAdd}><span aria-hidden="true">+</span>Adicionar</button>
-          {selectedIds.size > 0 ? (
+          {canAdd ? <button className="organization__add" type="button" onClick={onAdd}><span aria-hidden="true">+</span>Adicionar</button> : null}
+          {canDelete && selectedIds.size > 0 ? (
             <button className="organization__delete" type="button" onClick={() => setShowDeleteConfirmation(true)}>Excluir ({selectedIds.size})</button>
           ) : null}
         </div>
@@ -94,10 +98,10 @@ export default function RackInfo({ onBack, onAdd, onDelete, onSelect, items }: R
                 }
               }}
             >
-              <label className="rack-list__select" aria-label={`Selecionar ${rack.name}`} onClick={(event) => event.stopPropagation()}>
+              {canDelete ? <label className="rack-list__select" aria-label={`Selecionar ${rack.name}`} onClick={(event) => event.stopPropagation()}>
                 <input type="checkbox" checked={selectedIds.has(rack.apiId)} onChange={() => toggleSelection(rack.apiId)} />
                 <span aria-hidden="true" />
-              </label>
+              </label> : null}
               <span className="rack-list__icon"><img src={rackIcon} alt="" /></span>
               <span className="rack-list__content">
                 <span className="rack-list__title"><strong>{rack.name}</strong><small>{rack.id}</small></span>

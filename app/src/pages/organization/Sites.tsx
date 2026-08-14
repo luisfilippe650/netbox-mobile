@@ -11,6 +11,7 @@ type SitesProps = {
 export default function Sites({ onBack, items, regions, onCreate, onDelete }: SitesProps) {
   return (
     <OrganizationList
+      objectType="dcim.site"
       singular="Site"
       title="Sites"
       subtitle="Consulte os sites que fazem parte da infraestrutura."

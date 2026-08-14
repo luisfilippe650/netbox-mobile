@@ -17,6 +17,7 @@ export default function Locations({
 }: LocationsProps) {
   return (
     <OrganizationList
+      objectType="dcim.location"
       singular="Local"
       title="Locais"
       subtitle="Visualize os locais cadastrados em cada site."

@@ -12,6 +12,7 @@ import {
 } from "./sites/sites_service";
 
 export { NetBoxApiError, netboxClient } from "./client";
+export type { AuthenticatedUser, NetBoxObjectPermission } from "./client";
 export { loadNetBoxData } from "./load-data";
 export type { NetBoxData } from "./load-data";
 export { deviceRoleColors } from "./devices/devices_dto";

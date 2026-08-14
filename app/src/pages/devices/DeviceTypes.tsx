@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { PageShell } from "../../components/PageShell/PageShell";
+import { useAccess } from "../../context/AccessContext";
 import type { NetBoxDeviceType } from "../../services";
 import "../organization/organization.css";
 
@@ -11,6 +12,9 @@ type DeviceTypesProps = {
 };
 
 export default function DeviceTypes({ items, onAdd, onDelete, onBack }: DeviceTypesProps) {
+  const { can } = useAccess();
+  const canAdd = can("dcim.devicetype", "add");
+  const canDelete = can("dcim.devicetype", "delete");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectedItem, setSelectedItem] = useState<NetBoxDeviceType | null>(null);
@@ -64,8 +68,8 @@ export default function DeviceTypes({ items, onAdd, onDelete, onBack }: DeviceTy
       <section className="organization__heading" aria-label="Resumo dos tipos de dispositivos">
         <div><h2>Tipos cadastrados</h2><p>{filteredItems.length} tipo(s) encontrado(s)</p></div>
         <div className="organization__actions">
-          <button className="organization__add" type="button" onClick={onAdd}><span aria-hidden="true">+</span>Adicionar</button>
-          {selectedIds.size > 0 ? (
+          {canAdd ? <button className="organization__add" type="button" onClick={onAdd}><span aria-hidden="true">+</span>Adicionar</button> : null}
+          {canDelete && selectedIds.size > 0 ? (
             <button className="organization__delete" type="button" onClick={() => setShowDeleteConfirmation(true)}>Excluir ({selectedIds.size})</button>
           ) : null}
         </div>
@@ -88,10 +92,10 @@ export default function DeviceTypes({ items, onAdd, onDelete, onBack }: DeviceTy
                 }
               }}
             >
-              <label className="organization__select" aria-label={`Selecionar ${item.model}`} onClick={(event) => event.stopPropagation()}>
+              {canDelete ? <label className="organization__select" aria-label={`Selecionar ${item.model}`} onClick={(event) => event.stopPropagation()}>
                 <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelection(item.id)} />
                 <span aria-hidden="true" />
-              </label>
+              </label> : null}
               <span className="organization__avatar" aria-hidden="true">{item.model.slice(0, 1).toLocaleUpperCase("pt-BR")}</span>
               <div className="organization__card-content">
                 <div className="organization__card-title"><strong>{item.model}</strong><span>{item.id}</span></div>

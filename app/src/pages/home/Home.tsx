@@ -1,4 +1,5 @@
 import { PageShell } from "../../components/PageShell/PageShell";
+import { useAccess } from "../../context/AccessContext";
 import { useState } from "react";
 import scannerIcon from "../../assets/icons/leitura_automatica.png";
 import searchIcon from "../../assets/icons/tipos_de_objetos.png";
@@ -127,6 +128,7 @@ export default function Home({
   onDelete,
   onOpenPage,
 }: HomeProps) {
+  const { can, isUnrestricted, user } = useAccess();
   const [menuOpen, setMenuOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -139,6 +141,34 @@ export default function Home({
   const [deviceSearchTerm, setDeviceSearchTerm] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const canOpenPage = (page: NavigableHomePage) => {
+    const accessByPage: Partial<Record<NavigableHomePage, [string, "view" | "add"]>> = {
+      scanner: ["dcim.device", "view"], devices: ["dcim.device", "view"],
+      "add-device": ["dcim.device", "add"], "add-device-type": ["dcim.devicetype", "add"],
+      "device-types": ["dcim.devicetype", "view"], manufacturers: ["dcim.manufacturer", "view"],
+      "device-functions": ["dcim.devicerole", "view"], "rack-info": ["dcim.rack", "view"],
+      "add-rack": ["dcim.rack", "add"], "add-rack-group": ["dcim.rackgroup", "add"],
+      "rack-groups": ["dcim.rackgroup", "view"], "rack-roles": ["dcim.rackrole", "view"],
+      sites: ["dcim.site", "view"], locations: ["dcim.location", "view"], regions: ["dcim.region", "view"],
+    };
+    const access = accessByPage[page];
+    return !access || can(access[0], access[1]);
+  };
+
+  const canOpenAction = (key: HomePage) => {
+    if (key === "device") return deviceOptions.some((option) => option.page && canOpenPage(option.page));
+    if (key === "rack-info") return rackOptions.some((option) => option.page && canOpenPage(option.page));
+    if (key === "organizacao") return organizationOptions.some((option) => option.page && canOpenPage(option.page));
+    return true;
+  };
+  const managedObjectTypes = [
+    "dcim.device", "dcim.devicetype", "dcim.devicerole", "dcim.manufacturer",
+    "dcim.rack", "dcim.rackgroup", "dcim.rackrole", "dcim.site", "dcim.location", "dcim.region",
+  ];
+  const hasWriteAccess = managedObjectTypes.some((objectType) =>
+    can(objectType, "add") || can(objectType, "change") || can(objectType, "delete"),
+  );
 
   const normalizedDeviceSearch = deviceSearchTerm
     .trim()
@@ -213,6 +243,10 @@ export default function Home({
           </button>
           {menuOpen ? (
             <div className="home__menu-popover">
+              <div className="home__menu-user">
+                <strong>{user?.display ?? "Usuário"}</strong>
+                <small>{isUnrestricted ? "Acesso administrativo" : !hasWriteAccess ? "Somente leitura" : user?.groups.map((group) => group.name).join(", ") || "Acesso personalizado"}</small>
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -242,7 +276,7 @@ export default function Home({
       <section className="home__quick-section" aria-label="Ações rápidas">
         <h2 className="home__quick-title">Ações rápidas</h2>
         <div className="home__quick-actions">
-          <button
+          {can("dcim.device", "view") ? <button
             className="home__quick-action home__quick-action--primary"
             type="button"
             onClick={() => onOpenPage("scanner")}
@@ -254,8 +288,8 @@ export default function Home({
               <strong>Scanner</strong>
               <small>Leia um QR code</small>
             </span>
-          </button>
-          <button
+          </button> : null}
+          {can("dcim.device", "view") ? <button
             className="home__quick-action"
             type="button"
             onClick={() =>
@@ -274,7 +308,7 @@ export default function Home({
               <strong>Buscar dispositivo</strong>
               <small>Consulte detalhes</small>
             </span>
-          </button>
+          </button> : null}
         </div>
       </section>
 
@@ -285,7 +319,7 @@ export default function Home({
           </div>
         </div>
         <div className="page-grid home__grid">
-          {actions.map((action) => (
+          {actions.filter((action) => canOpenAction(action.key)).map((action) => (
             <button
               key={action.key}
               className="home__card"
@@ -664,7 +698,7 @@ export default function Home({
                       : selectedAction.key === "rack-info"
                         ? rackOptions
                         : organizationOptions
-                    ).map((option, index) => (
+                    ).filter((option) => !option.page || canOpenPage(option.page)).map((option, index) => (
                       <button
                         className={`home__modal-option${(selectedAction.key === "device" || selectedAction.key === "rack-info") && index === 0 ? " home__modal-option--primary" : ""}${option.tone ? ` home__modal-option--${option.tone}` : ""}`}
                         key={option.label}

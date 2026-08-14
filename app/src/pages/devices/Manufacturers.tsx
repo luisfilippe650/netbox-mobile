@@ -19,6 +19,7 @@ export default function Manufacturers({
 }: ManufacturersProps) {
   return (
     <OrganizationList
+      objectType="dcim.manufacturer"
       singular="Fabricante"
       title="Fabricantes"
       subtitle="Crie e gerencie os fabricantes dos dispositivos."

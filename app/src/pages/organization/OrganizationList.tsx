@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { PageShell } from "../../components/PageShell/PageShell";
 import { defaultDeviceRoleColor, DeviceRoleColorPicker } from "../devices/DeviceRoleColorPicker";
+import { useAccess } from "../../context/AccessContext";
 import "./organization.css";
 
 export type OrganizationItem = {
@@ -28,6 +29,7 @@ export type OrganizationCreateInput = {
 };
 
 type OrganizationListProps = {
+  objectType: string;
   singular: string;
   title: string;
   subtitle: string;
@@ -43,6 +45,7 @@ type OrganizationListProps = {
 };
 
 export function OrganizationList({
+  objectType,
   singular,
   title,
   subtitle,
@@ -56,6 +59,9 @@ export function OrganizationList({
   onDelete,
   onBack,
 }: OrganizationListProps) {
+  const { can } = useAccess();
+  const canAdd = can(objectType, "add");
+  const canDelete = can(objectType, "delete");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -168,15 +174,15 @@ export function OrganizationList({
           </p>
         </div>
         <div className="organization__actions">
-          <button
+          {canAdd ? <button
             className="organization__add"
             type="button"
             onClick={() => setShowAddForm(true)}
           >
             <span aria-hidden="true">+</span>
             Adicionar
-          </button>
-          {selectedIds.size > 0 ? (
+          </button> : null}
+          {canDelete && selectedIds.size > 0 ? (
             <button
               className="organization__delete"
               type="button"
@@ -205,7 +211,7 @@ export function OrganizationList({
               }
             }}
           >
-            <label
+            {canDelete ? <label
               className="organization__select"
               aria-label={`Selecionar ${item.name}`}
               onClick={(event) => event.stopPropagation()}
@@ -216,7 +222,7 @@ export function OrganizationList({
                 onChange={() => toggleSelection(item.id)}
               />
               <span aria-hidden="true" />
-            </label>
+            </label> : null}
             <span className="organization__avatar" aria-hidden="true">
               {item.name.slice(0, 1).toLocaleUpperCase("pt-BR")}
             </span>

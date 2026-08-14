@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { PageShell } from "../../components/PageShell/PageShell";
+import { useAccess } from "../../context/AccessContext";
 import type { DeviceRoleColor, NetBoxDeviceRole, NetBoxDeviceType, NetBoxRack } from "../../services";
 import type { OrganizationItem } from "../organization/OrganizationList";
 import { defaultDeviceRoleColor, DeviceRoleColorPicker } from "./DeviceRoleColorPicker";
@@ -15,6 +16,7 @@ type AddDeviceProps = {
 };
 
 export default function AddDevice({ onBack, sites, locations, roles, deviceTypes, racks, onCreate, onCreateRole, onCreateDeviceType }: AddDeviceProps) {
+  const { can } = useAccess();
   const [showFunctionForm, setShowFunctionForm] = useState(false);
   const [newFunction, setNewFunction] = useState("");
   const [newFunctionColor, setNewFunctionColor] = useState<DeviceRoleColor>(defaultDeviceRoleColor);
@@ -53,11 +55,11 @@ export default function AddDevice({ onBack, sites, locations, roles, deviceTypes
         <label className="add-device__field"><span>Nome do dispositivo</span><input type="text" name="deviceName" placeholder="Ex.: Servidor principal" /></label>
         <div className="add-device__field-group"><label className="add-device__field"><span>Função do dispositivo <em>obrigatório</em></span>
           <select name="deviceFunction" required defaultValue=""><option value="" disabled>Selecione uma função</option>{roles.map((item) => <option key={item.id} value={item.id}>{item.name ?? item.display}</option>)}</select></label>
-          <button className="add-device__create-related" type="button" onClick={() => setShowFunctionForm((current) => !current)}>+ Criar função</button></div>
+          {can("dcim.devicerole", "add") ? <button className="add-device__create-related" type="button" onClick={() => setShowFunctionForm((current) => !current)}>+ Criar função</button> : null}</div>
         {showFunctionForm ? <div className="add-device__new-function"><label className="add-device__field"><span>Nova função</span><input autoFocus value={newFunction} onChange={(event) => setNewFunction(event.target.value)} placeholder="Ex.: Firewall" /></label><DeviceRoleColorPicker value={newFunctionColor} onChange={setNewFunctionColor} disabled={isSubmitting} /><button type="button" disabled={isSubmitting} onClick={() => void createFunction()}>Adicionar função</button></div> : null}
         <label className="add-device__field"><span>Descrição</span><textarea name="description" rows={3} placeholder="Descreva o dispositivo (opcional)" /></label>
         <div className="add-device__field-group"><label className="add-device__field"><span>Tipo de dispositivo <em>obrigatório</em></span><select name="deviceType" required defaultValue=""><option value="" disabled>Selecione um tipo</option>{deviceTypes.map((item) => <option key={item.id} value={item.id}>{item.model}</option>)}</select></label>
-          <button className="add-device__create-related" type="button" onClick={onCreateDeviceType}>+ Criar tipo de dispositivo</button></div>
+          {can("dcim.devicetype", "add") ? <button className="add-device__create-related" type="button" onClick={onCreateDeviceType}>+ Criar tipo de dispositivo</button> : null}</div>
       </section>
       <section className="add-device__section">
         <div className="add-device__section-title"><div><h2>Localização</h2><p>Vincule o dispositivo ao local físico.</p></div></div>

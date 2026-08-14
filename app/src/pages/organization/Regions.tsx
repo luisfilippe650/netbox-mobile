@@ -9,7 +9,7 @@ type RegionsProps = {
 
 export default function Regions({ onBack, items, onCreate, onDelete }: RegionsProps) {
   return (
-    <OrganizationList singular="Região" title="Regiões"
+    <OrganizationList objectType="dcim.region" singular="Região" title="Regiões"
       subtitle="Consulte as regiões e seus vínculos com os racks."
       sectionTitle="Regiões cadastradas" searchLabel="Regiões"
       emptyMessage="Nenhuma região encontrada" items={items}

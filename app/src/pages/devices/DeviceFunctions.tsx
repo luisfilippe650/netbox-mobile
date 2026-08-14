@@ -19,6 +19,7 @@ export default function DeviceFunctions({
 }: DeviceFunctionsProps) {
   return (
     <OrganizationList
+      objectType="dcim.devicerole"
       singular="Função de dispositivo"
       title="Funções de dispositivos"
       subtitle="Crie e gerencie as funções usadas nos dispositivos."

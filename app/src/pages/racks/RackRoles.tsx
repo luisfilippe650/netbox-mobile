@@ -14,6 +14,7 @@ type RackRolesProps = {
 export default function RackRoles({ items, onCreate, onDelete, onBack }: RackRolesProps) {
   return (
     <OrganizationList
+      objectType="dcim.rackrole"
       singular="Função de rack"
       title="Funções de racks"
       subtitle="Crie e gerencie as funções atribuídas aos racks."

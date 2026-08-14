@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { PageShell } from "../../components/PageShell/PageShell";
+import { useAccess } from "../../context/AccessContext";
 import type { NetBoxRackGroup } from "../../services";
 import "../organization/organization.css";
 
@@ -11,6 +12,9 @@ type RackGroupsProps = {
 };
 
 export default function RackGroups({ items, onAdd, onDelete, onBack }: RackGroupsProps) {
+  const { can } = useAccess();
+  const canAdd = can("dcim.rackgroup", "add");
+  const canDelete = can("dcim.rackgroup", "delete");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectedItem, setSelectedItem] = useState<NetBoxRackGroup | null>(null);
@@ -63,8 +67,8 @@ export default function RackGroups({ items, onAdd, onDelete, onBack }: RackGroup
       <section className="organization__heading" aria-label="Resumo dos grupos de racks">
         <div><h2>Grupos cadastrados</h2><p>{filteredItems.length} grupo(s) encontrado(s)</p></div>
         <div className="organization__actions">
-          <button className="organization__add" type="button" onClick={onAdd}><span aria-hidden="true">+</span>Adicionar</button>
-          {selectedIds.size > 0 ? (
+          {canAdd ? <button className="organization__add" type="button" onClick={onAdd}><span aria-hidden="true">+</span>Adicionar</button> : null}
+          {canDelete && selectedIds.size > 0 ? (
             <button className="organization__delete" type="button" onClick={() => setShowDeleteConfirmation(true)}>Excluir ({selectedIds.size})</button>
           ) : null}
         </div>
@@ -87,10 +91,10 @@ export default function RackGroups({ items, onAdd, onDelete, onBack }: RackGroup
                 }
               }}
             >
-              <label className="organization__select" aria-label={`Selecionar ${name}`} onClick={(event) => event.stopPropagation()}>
+              {canDelete ? <label className="organization__select" aria-label={`Selecionar ${name}`} onClick={(event) => event.stopPropagation()}>
                 <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelection(item.id)} />
                 <span aria-hidden="true" />
-              </label>
+              </label> : null}
               <span className="organization__avatar" aria-hidden="true">{name.slice(0, 1).toLocaleUpperCase("pt-BR")}</span>
               <div className="organization__card-content">
                 <div className="organization__card-title"><strong>{name}</strong><span>{item.id}</span></div>

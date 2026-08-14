@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import QRCode from "qrcode";
 import { PageShell } from "../../components/PageShell/PageShell";
+import { useAccess } from "../../context/AccessContext";
 import type { NetBoxRack } from "../../services";
 import type { OrganizationItem } from "../organization/OrganizationList";
 import type { DeviceSummary } from "./devices-data";
@@ -21,6 +22,8 @@ export default function ObjectInfo({
   racks,
   onUpdate,
 }: ObjectInfoProps) {
+  const { can } = useAccess();
+  const canChange = can("dcim.device", "change");
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<DeviceSummary>({ ...device });
   const [savedMessage, setSavedMessage] = useState(false);
@@ -113,7 +116,7 @@ export default function ObjectInfo({
           >
             {isGeneratingQrCode ? "Gerando..." : "Gerar QR Code"}
           </button>
-          <button
+          {canChange ? <button
             className={
               isEditing
                 ? "object-info__customize object-info__customize--active"
@@ -123,7 +126,7 @@ export default function ObjectInfo({
             onClick={() => (isEditing ? cancelEditing() : setIsEditing(true))}
           >
             {isEditing ? "Cancelar" : "Personalizar"}
-          </button>
+          </button> : null}
         </div>
       </section>
 

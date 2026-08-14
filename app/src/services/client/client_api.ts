@@ -86,6 +86,10 @@ class NetBoxApiClient {
     return this.request('/authentication-check/', {}, authenticationCheckSchema)
   }
 
+  options(path: string) {
+    return this.request<Record<string, unknown>>(path, { method: 'OPTIONS' })
+  }
+
   async list<T>(path: string, itemSchema: z.ZodType<T>, parameters: Record<string, string | number | undefined> = {}) {
     const query = new URLSearchParams()
     Object.entries({ limit: 1000, ...parameters }).forEach(([key, value]) => {

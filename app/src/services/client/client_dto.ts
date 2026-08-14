@@ -53,10 +53,28 @@ export const tokenSchema = z.object({
   write_enabled: z.boolean(),
 })
 
+export const objectPermissionSchema = z.object({
+  id: entityIdSchema,
+  name: z.string(),
+  enabled: z.boolean().default(true),
+  object_types: z.array(z.string()),
+  actions: z.array(z.string()),
+  constraints: z.unknown().optional(),
+})
+
 export const authenticationCheckSchema = z.object({
   id: entityIdSchema,
   username: z.string().min(1),
   display: z.string(),
+  first_name: z.string().default(''),
+  last_name: z.string().default(''),
+  email: z.string().default(''),
+  groups: z.array(z.object({
+    id: entityIdSchema,
+    name: z.string(),
+    permissions: z.array(objectPermissionSchema).default([]),
+  })).default([]),
+  permissions: z.array(objectPermissionSchema).default([]),
 })
 
 export const loginInputSchema = z.object({
@@ -65,4 +83,6 @@ export const loginInputSchema = z.object({
 })
 
 export type NetBoxToken = z.infer<typeof tokenSchema>
+export type AuthenticatedUser = z.infer<typeof authenticationCheckSchema>
+export type NetBoxObjectPermission = z.infer<typeof objectPermissionSchema>
 export type LoginDto = z.infer<typeof loginInputSchema>

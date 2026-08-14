@@ -13,13 +13,13 @@ class NetBoxClientService {
     const credentials = parseWithSchema(loginInputSchema, { username, password }, 'credenciais')
     const token = await netboxApi.provisionToken(credentials)
     netboxSession.start(token)
+    return netboxApi.checkAuthentication()
   }
 
   async restoreSession() {
     if (!netboxSession.isAuthenticated) return false
     try {
-      await netboxApi.checkAuthentication()
-      return true
+      return await netboxApi.checkAuthentication()
     } catch (error) {
       if (!netboxSession.isAuthenticated) return false
       throw error
@@ -45,6 +45,10 @@ class NetBoxClientService {
 
   get<T>(path: string, responseSchema: z.ZodType<T>) {
     return netboxApi.get(path, responseSchema)
+  }
+
+  options(path: string) {
+    return netboxApi.options(path)
   }
 
   create<TInput, TOutput>(path: string, body: unknown, inputSchema: z.ZodType<TInput>, responseSchema: z.ZodType<TOutput>) {
