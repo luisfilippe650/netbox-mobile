@@ -3,6 +3,7 @@ import { netboxApi } from "./client_api";
 import { loginInputSchema } from "./client_dto";
 import { parseWithSchema } from "./client_errors";
 import { netboxSession } from "./client_session";
+import type { PageParameters } from "./client_api";
 
 /**
  * Fachada usada pela aplicação para autenticação e operações HTTP validadas.
@@ -82,6 +83,11 @@ class NetBoxClientService {
     parameters?: Record<string, string | number | undefined>,
   ) {
     return netboxApi.list(path, itemSchema, parameters);
+  }
+
+  /** Busca uma única página sem acumular o restante do endpoint em memória. */
+  page<T>(path: string, itemSchema: z.ZodType<T>, parameters?: PageParameters) {
+    return netboxApi.page(path, itemSchema, parameters);
   }
 
   /** Busca um recurso e valida a resposta com o schema informado. */

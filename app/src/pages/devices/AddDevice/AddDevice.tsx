@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
 import { PageShell } from "../../../components/PageShell/PageShell";
 import { useAccess } from "../../../context/AccessContext";
 import type {
@@ -107,7 +107,9 @@ export default function AddDevice({
     unavailableRequiredCustomFields.length > 0
       ? `Os campos obrigatórios ${unavailableRequiredCustomFields
           .map((field) => `“${field.label || field.name}”`)
-          .join(", ")} estão ocultos ou não editáveis e não possuem valor padrão. Ajuste a configuração no NetBox.`
+          .join(
+            ", ",
+          )} estão ocultos ou não editáveis e não possuem valor padrão. Ajuste a configuração no NetBox.`
       : "";
 
   useEffect(() => {
@@ -169,7 +171,7 @@ export default function AddDevice({
     }
   };
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     setError("");

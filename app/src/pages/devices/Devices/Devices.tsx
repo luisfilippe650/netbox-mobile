@@ -1,7 +1,14 @@
 import { PageShell } from "../../../components/PageShell/PageShell";
+import { Pagination } from "../../../components/Pagination/Pagination";
 import deviceIcon from "../../../assets/icons/inserir_id_manualmente.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccess } from "../../../context/AccessContext";
+import {
+  usePaginatedData,
+  type PageRequest,
+  type PageResult,
+} from "../../../hooks/usePaginatedData";
+import type { BatchDeleteResult } from "../../../services";
 import type { DeviceSummary } from "../shared/devices-data";
 import "./Devices.css";
 
@@ -9,15 +16,17 @@ type DevicesProps = {
   onBack: () => void;
   onAdd: () => void;
   onSelect: (device: DeviceSummary) => void;
-  items: readonly DeviceSummary[];
-  onDelete: (ids: number[]) => Promise<void>;
+  loadPage: (
+    request: PageRequest & { searchBy: "name" | "id" },
+  ) => Promise<PageResult<DeviceSummary>>;
+  onDelete: (ids: number[]) => Promise<BatchDeleteResult>;
 };
 
 export default function Devices({
   onBack,
   onAdd,
   onSelect,
-  items,
+  loadPage,
   onDelete,
 }: DevicesProps) {
   const { can } = useAccess();
@@ -28,15 +37,19 @@ export default function Devices({
   const [searchBy, setSearchBy] = useState<"name" | "id">("name");
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState("");
-
-  const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase("pt-BR");
-  const filteredItems = items.filter((item) => {
-    if (!normalizedSearchTerm) return true;
-
-    const value = searchBy === "id" ? item.id : item.name;
-    return value.toLocaleLowerCase("pt-BR").includes(normalizedSearchTerm);
+  const [actionError, setActionError] = useState("");
+  const pagination = usePaginatedData({
+    loadPage: (request) => loadPage({ ...request, searchBy }),
+    query: searchTerm,
+    requestKey: searchBy,
   });
+  const items = pagination.items;
+  const normalizedSearchTerm = searchTerm.trim();
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setShowDeleteConfirmation(false);
+  }, [pagination.page, searchBy, searchTerm]);
 
   const toggleSelection = (id: string) => {
     setSelectedIds((current) => {
@@ -49,17 +62,23 @@ export default function Devices({
 
   const deleteSelected = async () => {
     setIsDeleting(true);
-    setError("");
+    setActionError("");
     try {
-      await onDelete(
+      const result = await onDelete(
         items
           .filter((item) => selectedIds.has(item.id))
           .map((item) => item.apiId),
       );
-      setSelectedIds(new Set());
+      const removedIds = new Set(result.removedIds.map(String));
+      setSelectedIds((current) =>
+        new Set([...current].filter((id) => !removedIds.has(id))),
+      );
+      pagination.reload();
+      if (result.failedMessages.length > 0)
+        throw new Error(result.failedMessages.join(" · "));
       setShowDeleteConfirmation(false);
     } catch (deleteError) {
-      setError(
+      setActionError(
         deleteError instanceof Error
           ? deleteError.message
           : "Não foi possível excluir os equipamentos.",
@@ -107,9 +126,9 @@ export default function Devices({
           ) : null}
         </div>
       </section>
-      {error ? (
+      {actionError || pagination.error ? (
         <p className="devices__error" role="alert">
-          {error}
+          {actionError || pagination.error}
         </p>
       ) : null}
       <section
@@ -122,7 +141,7 @@ export default function Devices({
             <p>Escolha como deseja pesquisar.</p>
           </div>
           {normalizedSearchTerm ? (
-            <span>{filteredItems.length} resultado(s)</span>
+            <span>{pagination.total} resultado(s)</span>
           ) : null}
         </div>
         <div
@@ -169,7 +188,10 @@ export default function Devices({
           />
         </label>
       </section>
-      {filteredItems.map((item) => (
+      {pagination.isLoading ? (
+        <p className="devices__empty">Carregando equipamentos…</p>
+      ) : null}
+      {items.map((item) => (
         <article
           key={item.id}
           className="page-card devices__card"
@@ -211,15 +233,16 @@ export default function Devices({
           </p>
         </article>
       ))}
-      {items.length === 0 ? (
+      {!pagination.isLoading && items.length === 0 ? (
         <p className="devices__empty">Nenhum equipamento cadastrado.</p>
       ) : null}
-      {items.length > 0 && filteredItems.length === 0 ? (
-        <p className="devices__empty">
-          Nenhum equipamento encontrado por{" "}
-          {searchBy === "id" ? "esse ID" : "esse nome"}.
-        </p>
-      ) : null}
+      <Pagination
+        disabled={pagination.isLoading}
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setPage}
+      />
       <button
         className="page-button page-button--secondary"
         type="button"

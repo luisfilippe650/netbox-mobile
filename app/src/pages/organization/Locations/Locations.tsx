@@ -3,18 +3,20 @@ import {
   type OrganizationCreateInput,
   type OrganizationItem,
 } from "../OrganizationList/OrganizationList";
+import type { PageRequest, PageResult } from "../../../hooks/usePaginatedData";
+import type { BatchDeleteResult } from "../../../services";
 
 type LocationsProps = {
   onBack: () => void;
-  items: readonly OrganizationItem[];
+  loadPage: (request: PageRequest) => Promise<PageResult<OrganizationItem>>;
   sites: readonly OrganizationItem[];
   onCreate: (input: OrganizationCreateInput) => Promise<void>;
-  onDelete: (ids: number[]) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<BatchDeleteResult>;
 };
 
 export default function Locations({
   onBack,
-  items,
+  loadPage,
   sites,
   onCreate,
   onDelete,
@@ -28,7 +30,7 @@ export default function Locations({
       sectionTitle="Locais cadastrados"
       searchLabel="Locais"
       emptyMessage="Nenhum local encontrado"
-      items={items}
+      loadPage={loadPage}
       siteOptions={sites}
       onCreate={onCreate}
       onDelete={onDelete}

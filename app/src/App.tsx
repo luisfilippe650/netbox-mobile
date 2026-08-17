@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useAccess } from "./context/AccessContext";
+import { hasObjectAccess } from "./context/access-control";
 import Login from "./pages/login/Login";
 import Home, { type DeleteKind } from "./pages/home/Home";
-import ScannerPage from "./pages/scanner/Scanner";
-import ObjectInfoPage from "./pages/devices/ObjectInfo/ObjectInfo";
 import DevicesPage from "./pages/devices/Devices/Devices";
 import type { DeviceSummary } from "./pages/devices/shared/devices-data";
 import AddDevicePage, {
@@ -27,8 +33,12 @@ import type { RackSummary } from "./pages/racks/shared/data";
 import SitesPage from "./pages/organization/Sites/Sites";
 import LocationsPage from "./pages/organization/Locations/Locations";
 import RegionsPage from "./pages/organization/Regions/Regions";
-import type { OrganizationCreateInput } from "./pages/organization/OrganizationList/OrganizationList";
+import type {
+  OrganizationCreateInput,
+  OrganizationItem,
+} from "./pages/organization/OrganizationList/OrganizationList";
 import {
+  deleteResources,
   loadNetBoxData,
   mapDevice,
   mapDeviceRoles,
@@ -42,8 +52,20 @@ import {
   netboxClient,
   slugify,
   type NetBoxData,
+  type NetBoxDataKey,
 } from "./services";
+import type {
+  PageRequest,
+  PageResult,
+} from "./hooks/usePaginatedData";
 import "./utils/colors.css";
+
+// Scanner e geração de QR code carregam bibliotecas relativamente grandes.
+// Separá-los mantém a tela inicial leve sem perder o funcionamento offline do APK.
+const ScannerPage = lazy(() => import("./pages/scanner/Scanner"));
+const ObjectInfoPage = lazy(
+  () => import("./pages/devices/ObjectInfo/ObjectInfo"),
+);
 
 type Page =
   | "login"
@@ -79,8 +101,36 @@ const emptyData: NetBoxData = {
   regions: [],
 };
 
+const initialDataKeys: NetBoxDataKey[] = [];
+
+const pageDataKeys: Partial<Record<Page, NetBoxDataKey[]>> = {
+  "object-info": ["deviceTypes", "sites", "racks"],
+  "add-device": [
+    "deviceTypes",
+    "deviceRoles",
+    "sites",
+    "locations",
+    "racks",
+  ],
+  "add-device-type": ["manufacturers"],
+  "add-rack": ["sites", "locations", "rackGroups", "rackRoles"],
+  sites: ["regions"],
+  locations: ["sites"],
+};
+
+const pageLoadingFallback = (
+  <main className="app-state">
+    <strong>Carregando página…</strong>
+  </main>
+);
+
 export default function App() {
-  const { clearSessionAccess, setSessionAccess } = useAccess();
+  const {
+    clearSessionAccess,
+    isUnrestricted,
+    setSessionAccess,
+    user: sessionUser,
+  } = useAccess();
   const [page, setPage] = useState<Page>("login");
   const [data, setData] = useState<NetBoxData>(emptyData);
   const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(
@@ -94,6 +144,7 @@ export default function App() {
     "home" | "rack-groups"
   >("home");
   const [checkingSession, setCheckingSession] = useState(true);
+  const [loadingPage, setLoadingPage] = useState(false);
   const [appError, setAppError] = useState("");
 
   const devices = useMemo(
@@ -112,56 +163,183 @@ export default function App() {
     [data.locations],
   );
   const regions = useMemo(() => mapRegions(data.regions), [data.regions]);
-  const manufacturers = useMemo(
-    () => mapManufacturers(data.manufacturers),
-    [data.manufacturers],
-  );
-  const deviceRoles = useMemo(
-    () => mapDeviceRoles(data.deviceRoles),
-    [data.deviceRoles],
-  );
-  const rackRoles = useMemo(
-    () => mapRackRoles(data.rackRoles),
-    [data.rackRoles],
-  );
-  const racks = useMemo(
-    () => mapRacks(data.racks, devices),
-    [data.racks, devices],
+  const loadPermittedData = useCallback(
+    async (
+      keys: readonly NetBoxDataKey[],
+      user: NonNullable<typeof sessionUser>,
+      unrestricted: boolean,
+    ) =>
+      loadNetBoxData(keys, (objectType) =>
+        hasObjectAccess(user, unrestricted, objectType, "view"),
+      ),
+    [],
   );
 
-  const refresh = async () => {
-    const nextData = await loadNetBoxData();
-    setData(nextData);
-    return nextData;
+  const reloadData = async (keys: readonly NetBoxDataKey[]) => {
+    if (!sessionUser) return;
+    const patch = await loadPermittedData(keys, sessionUser, isUnrestricted);
+    setData((current) => ({ ...current, ...patch }));
+  };
+
+  const pageParameters = ({ limit, offset, q }: PageRequest) => ({
+    limit,
+    offset,
+    ...(q ? { q } : {}),
+  });
+
+  const loadDevicesPage = async (
+    request: PageRequest & { searchBy: "name" | "id" },
+  ): Promise<PageResult<DeviceSummary>> => {
+    const { q, searchBy, ...pagination } = request;
+    const response = await netbox.devices.page({
+      ...pagination,
+      ...(q ? (searchBy === "id" ? { id: q } : { q }) : {}),
+    });
+    return {
+      count: response.count,
+      results: response.results.map((device) =>
+        mapDevice(
+          device,
+          data.deviceTypes.find((item) => item.id === device.device_type.id),
+        ),
+      ),
+    };
+  };
+
+  const mapOrganizationPage = async <T,>(
+    request: PageRequest,
+    loader: (parameters: ReturnType<typeof pageParameters>) => Promise<{
+      count: number;
+      results: T[];
+    }>,
+    mapper: (items: T[]) => OrganizationItem[],
+  ): Promise<PageResult<OrganizationItem>> => {
+    const response = await loader(pageParameters(request));
+    return { count: response.count, results: mapper(response.results) };
+  };
+
+  const navigateTo = async (nextPage: Page) => {
+    setLoadingPage(true);
+    try {
+      const keys = pageDataKeys[nextPage];
+      if (keys) await reloadData(keys);
+      setAppError("");
+      setPage(nextPage);
+    } catch (error) {
+      setAppError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar esta página.",
+      );
+    } finally {
+      setLoadingPage(false);
+    }
   };
 
   const openPage = (nextPage: Page) => {
     if (nextPage === "add-device-type") setDeviceTypeReturnPage("devices");
-    setPage(nextPage);
+    void navigateTo(nextPage);
   };
 
-  const applySessionAccess = async (
-    user: Awaited<ReturnType<typeof netboxClient.login>>,
-  ) => {
-    let unrestricted = false;
+  const openDevice = async (device: DeviceSummary) => {
+    setLoadingPage(true);
     try {
-      const metadata = await netboxClient.options("/users/permissions/");
-      const actions = metadata.actions;
-      unrestricted =
-        typeof actions === "object" && actions !== null && "POST" in actions;
-    } catch {
-      unrestricted = false;
+      if (!sessionUser) throw new Error("A sessão do NetBox expirou.");
+      const patch = await loadPermittedData(
+        pageDataKeys["object-info"] ?? [],
+        sessionUser,
+        isUnrestricted,
+      );
+      setData((current) => ({ ...current, ...patch }));
+      const deviceType = patch.deviceTypes?.find(
+        (item) => item.id === device.deviceTypeId,
+      );
+      setSelectedDevice({
+        ...device,
+        deviceTypeDescription:
+          deviceType?.description || device.deviceTypeDescription,
+      });
+      setAppError("");
+      setPage("object-info");
+    } catch (error) {
+      setAppError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível abrir o equipamento.",
+      );
+    } finally {
+      setLoadingPage(false);
     }
-    setSessionAccess(user, unrestricted);
   };
+
+  const openRack = async (rack: RackSummary) => {
+    setLoadingPage(true);
+    try {
+      const canViewDevices =
+        sessionUser &&
+        hasObjectAccess(
+          sessionUser,
+          isUnrestricted,
+          "dcim.device",
+          "view",
+        );
+      const rackDevices = canViewDevices
+        ? (await netbox.devices.list({ rack_id: rack.apiId }))
+            .map((device) => mapDevice(device))
+            .filter((device) => device.allocatedUnit > 0)
+            .map((device) => ({
+              id: device.id,
+              apiId: device.apiId,
+              name: device.name,
+              role: device.role,
+              startingUnit: device.allocatedUnit,
+              height: device.height,
+              status: device.status,
+            }))
+        : [];
+      setSelectedRack({ ...rack, devices: rackDevices });
+      setAppError("");
+      setPage("rack-details");
+    } catch (error) {
+      setAppError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar a ocupação do rack.",
+      );
+    } finally {
+      setLoadingPage(false);
+    }
+  };
+
+  const applySessionAccess = useCallback(
+    async (user: Awaited<ReturnType<typeof netboxClient.login>>) => {
+      let unrestricted = false;
+      try {
+        const metadata = await netboxClient.options("/users/permissions/");
+        const actions = metadata.actions;
+        unrestricted =
+          typeof actions === "object" && actions !== null && "POST" in actions;
+      } catch {
+        unrestricted = false;
+      }
+      setSessionAccess(user, unrestricted);
+      return unrestricted;
+    },
+    [setSessionAccess],
+  );
 
   useEffect(() => {
     void (async () => {
       try {
         const user = await netboxClient.restoreSession();
         if (user) {
-          await applySessionAccess(user);
-          await refresh();
+          const unrestricted = await applySessionAccess(user);
+          const nextData = await loadPermittedData(
+            initialDataKeys,
+            user,
+            unrestricted,
+          );
+          setData({ ...emptyData, ...nextData });
           setPage("home");
         }
       } catch (error) {
@@ -174,13 +352,18 @@ export default function App() {
         setCheckingSession(false);
       }
     })();
-  }, []);
+  }, [applySessionAccess, loadPermittedData]);
 
   const login = async (username: string, password: string) => {
     const user = await netboxClient.login(username, password);
     try {
-      await applySessionAccess(user);
-      await refresh();
+      const unrestricted = await applySessionAccess(user);
+      const nextData = await loadPermittedData(
+        initialDataKeys,
+        user,
+        unrestricted,
+      );
+      setData({ ...emptyData, ...nextData });
       setAppError("");
       setPage("home");
     } catch (error) {
@@ -208,22 +391,28 @@ export default function App() {
   };
 
   const createRole = async (name: string, input?: OrganizationCreateInput) => {
-    await netbox.deviceRoles.create({
+    const created = await netbox.deviceRoles.create({
       name,
       slug: slugify(name),
       color: input?.color ?? "9e9e9e",
       vm_role: input?.vmRole ?? false,
       description: input?.description ?? "",
     });
-    await refresh();
+    setData((current) => ({
+      ...current,
+      deviceRoles: [...current.deviceRoles, created],
+    }));
   };
   const createManufacturer = async (name: string, description = "") => {
-    await netbox.manufacturers.create({
+    const created = await netbox.manufacturers.create({
       name,
       slug: slugify(name),
       description,
     });
-    await refresh();
+    setData((current) => ({
+      ...current,
+      manufacturers: [...current.manufacturers, created],
+    }));
   };
 
   const createDevice = async (input: DeviceCreateInput) => {
@@ -242,18 +431,20 @@ export default function App() {
       description: input.description,
       custom_fields: input.customFields,
     });
-    await refresh();
     setPage("devices");
   };
   const createDeviceType = async (input: DeviceTypeCreateInput) => {
-    await netbox.deviceTypes.create({
+    const created = await netbox.deviceTypes.create({
       manufacturer: input.manufacturerId,
       model: input.model,
       slug: slugify(input.model),
       u_height: input.height,
       description: input.description,
     });
-    await refresh();
+    setData((current) => ({
+      ...current,
+      deviceTypes: [...current.deviceTypes, created],
+    }));
     setPage(deviceTypeReturnPage);
   };
   const updateDevice = async (
@@ -279,18 +470,13 @@ export default function App() {
       response,
       data.deviceTypes.find((item) => item.id === response.device_type.id),
     );
-    await refresh();
     setSelectedDevice(updated);
     return updated;
   };
-  const deleteDevices = async (ids: number[]) => {
-    await Promise.all(ids.map((id) => netbox.devices.delete(id)));
-    await refresh();
-  };
-  const deleteDeviceTypes = async (ids: number[]) => {
-    await Promise.all(ids.map((id) => netbox.deviceTypes.delete(id)));
-    await refresh();
-  };
+  const deleteDevices = (ids: number[]) =>
+    deleteResources(ids, netbox.devices.delete, "equipamento");
+  const deleteDeviceTypes = (ids: number[]) =>
+    deleteResources(ids, netbox.deviceTypes.delete, "tipo de equipamento");
 
   const createRack = async (input: RackCreateInput) => {
     await netbox.racks.create({
@@ -305,30 +491,35 @@ export default function App() {
       starting_unit: input.startingUnit,
       description: input.description,
     });
-    await refresh();
     setPage("rack-info");
   };
-  const deleteRacks = async (ids: number[]) => {
-    await Promise.all(ids.map((id) => netbox.racks.delete(id)));
-    await refresh();
-  };
+  const deleteRacks = (ids: number[]) =>
+    deleteResources(ids, netbox.racks.delete, "rack");
   const createRackGroup = async (name: string, description: string) => {
-    await netbox.rackGroups.create({ name, slug: slugify(name), description });
-    await refresh();
+    const created = await netbox.rackGroups.create({
+      name,
+      slug: slugify(name),
+      description,
+    });
+    setData((current) => ({
+      ...current,
+      rackGroups: [...current.rackGroups, created],
+    }));
     setPage(rackGroupReturnPage);
   };
-  const deleteRackGroups = async (ids: number[]) => {
-    await Promise.all(ids.map((id) => netbox.rackGroups.delete(id)));
-    await refresh();
-  };
+  const deleteRackGroups = (ids: number[]) =>
+    deleteResources(ids, netbox.rackGroups.delete, "grupo de rack");
   const createRackRole = async (input: OrganizationCreateInput) => {
-    await netbox.rackRoles.create({
+    const created = await netbox.rackRoles.create({
       name: input.name,
       slug: slugify(input.name),
       color: input.color ?? "9e9e9e",
       description: input.description,
     });
-    await refresh();
+    setData((current) => ({
+      ...current,
+      rackRoles: [...current.rackRoles, created],
+    }));
   };
   const createRackGroupQuick = async (name: string) => {
     const created = await netbox.rackGroups.create({
@@ -336,7 +527,10 @@ export default function App() {
       slug: slugify(name),
       description: "",
     });
-    await refresh();
+    setData((current) => ({
+      ...current,
+      rackGroups: [...current.rackGroups, created],
+    }));
     return created.id;
   };
   const createRackRoleQuick = async (
@@ -349,13 +543,14 @@ export default function App() {
       color: color ?? "9e9e9e",
       description: "",
     });
-    await refresh();
+    setData((current) => ({
+      ...current,
+      rackRoles: [...current.rackRoles, created],
+    }));
     return created.id;
   };
-  const deleteRackRoles = async (ids: number[]) => {
-    await Promise.all(ids.map((id) => netbox.rackRoles.delete(id)));
-    await refresh();
-  };
+  const deleteRackRoles = (ids: number[]) =>
+    deleteResources(ids, netbox.rackRoles.delete, "função de rack");
 
   const createOrganization = async (
     kind: "site" | "location" | "region" | "manufacturer" | "role",
@@ -386,7 +581,6 @@ export default function App() {
     if (kind === "manufacturer")
       await createManufacturer(input.name, input.description);
     if (kind === "role") await createRole(input.name, input);
-    if (kind !== "manufacturer" && kind !== "role") await refresh();
   };
 
   const deleteOrganization = async (
@@ -400,77 +594,107 @@ export default function App() {
       manufacturer: netbox.manufacturers.delete,
       role: netbox.deviceRoles.delete,
     }[kind];
-    await Promise.all(ids.map((id) => remove(id)));
-    await refresh();
+    return deleteResources(ids, remove, "item");
   };
 
   const deleteFromHome = async (kind: DeleteKind, id: number) => {
-    if (kind === "rack") await netbox.racks.delete(id);
-    await refresh();
+    if (kind === "rack") {
+      await netbox.racks.delete(id);
+      setData((current) => ({
+        ...current,
+        racks: current.racks.filter((rack) => rack.id !== id),
+      }));
+    }
   };
 
-  if (checkingSession)
+  if (checkingSession || loadingPage)
     return (
       <main className="app-state">
         <strong>Conectando ao NetBox…</strong>
       </main>
     );
-  if (page === "login") return <Login onLogin={login} />;
+  if (page === "login")
+    return <Login initialError={appError} onLogin={login} />;
 
   if (page === "home")
     return (
-      <Home
-        onLogout={() => void logout()}
-        devices={devices}
-        racks={data.racks}
-        onDelete={deleteFromHome}
-        onSelectDevice={(device) => {
-          setSelectedDevice(device);
-          setPage("object-info");
-        }}
-        onOpenPage={openPage}
-      />
+      <>
+        <Home
+          onLogout={() => void logout()}
+          searchDevices={async (searchBy, query) => {
+            const result = await loadDevicesPage({
+              limit: 10,
+              offset: 0,
+              q: query,
+              searchBy,
+            });
+            return result.results;
+          }}
+          racks={data.racks}
+          onDelete={deleteFromHome}
+          onSelectDevice={(device) => void openDevice(device)}
+          onOpenPage={openPage}
+        />
+        {appError ? (
+          <p className="app-toast" role="alert">
+            {appError}
+          </p>
+        ) : null}
+      </>
     );
 
   if (page === "scanner")
     return (
-      <ScannerPage
-        onBack={() => setPage("home")}
-        onOpenDevice={(id) => {
-          const device = devices.find((item) => item.id === id);
-          if (device) {
-            setSelectedDevice(device);
-            setPage("object-info");
-          } else {
-            setAppError(`Nenhum equipamento com o ID ${id} foi encontrado.`);
-            setPage("devices");
-          }
-        }}
-      />
+      <Suspense fallback={pageLoadingFallback}>
+        <ScannerPage
+          onBack={() => setPage("home")}
+          onOpenDevice={(id) => {
+            void loadDevicesPage({
+              limit: 1,
+              offset: 0,
+              q: id,
+              searchBy: "id",
+            })
+              .then((result) => {
+                const device = result.results[0];
+                if (device) return openDevice(device);
+                setAppError(`Nenhum equipamento com o ID ${id} foi encontrado.`);
+                setPage("devices");
+              })
+              .catch((error: unknown) => {
+                setAppError(
+                  error instanceof Error
+                    ? error.message
+                    : "Não foi possível buscar o equipamento.",
+                );
+                setPage("devices");
+              });
+          }}
+        />
+      </Suspense>
     );
 
   if (page === "object-info" && selectedDevice)
     return (
-      <ObjectInfoPage
-        device={selectedDevice}
-        sites={sites}
-        racks={data.racks}
-        loadCustomFields={netbox.customFields.listForDevices}
-        onUpdate={updateDevice}
-        onBack={() => setPage("devices")}
-      />
+      <Suspense fallback={pageLoadingFallback}>
+        <ObjectInfoPage
+          device={selectedDevice}
+          sites={sites}
+          racks={data.racks}
+          loadCustomFields={netbox.customFields.listForDevices}
+          onUpdate={updateDevice}
+          onBack={() => setPage("devices")}
+        />
+      </Suspense>
     );
   if (page === "object-info")
     return (
       <DevicesPage
-        items={devices}
+        loadPage={loadDevicesPage}
         onDelete={deleteDevices}
         onBack={() => setPage("home")}
-        onAdd={() => setPage("add-device")}
-        onSelect={(device) => {
-          setSelectedDevice(device);
-          setPage("object-info");
-        }}
+        onAdd={() => void navigateTo("add-device")}
+        onSelect={(device) => void openDevice(device)}
       />
     );
 
@@ -478,17 +702,14 @@ export default function App() {
     return (
       <>
         <DevicesPage
-          items={devices}
+          loadPage={loadDevicesPage}
           onDelete={deleteDevices}
           onBack={() => {
             setAppError("");
             setPage("home");
           }}
-          onAdd={() => setPage("add-device")}
-          onSelect={(device) => {
-            setSelectedDevice(device);
-            setPage("object-info");
-          }}
+          onAdd={() => void navigateTo("add-device")}
+          onSelect={(device) => void openDevice(device)}
         />
         {appError ? (
           <p className="app-toast" role="alert">
@@ -500,11 +721,13 @@ export default function App() {
   if (page === "device-types")
     return (
       <DeviceTypesPage
-        items={data.deviceTypes}
+        loadPage={(request) =>
+          netbox.deviceTypes.page(pageParameters(request))
+        }
         onDelete={deleteDeviceTypes}
         onAdd={() => {
           setDeviceTypeReturnPage("device-types");
-          setPage("add-device-type");
+          void navigateTo("add-device-type");
         }}
         onBack={() => setPage("home")}
       />
@@ -524,7 +747,7 @@ export default function App() {
         }
         onCreateDeviceType={() => {
           setDeviceTypeReturnPage("add-device");
-          setPage("add-device-type");
+          void navigateTo("add-device-type");
         }}
         onBack={() => setPage("devices")}
       />
@@ -541,7 +764,13 @@ export default function App() {
   if (page === "manufacturers")
     return (
       <ManufacturersPage
-        items={manufacturers}
+        loadPage={(request) =>
+          mapOrganizationPage(
+            request,
+            netbox.manufacturers.page,
+            mapManufacturers,
+          )
+        }
         onCreate={(input) => createOrganization("manufacturer", input)}
         onDelete={(ids) => deleteOrganization("manufacturer", ids)}
         onBack={() => setPage("home")}
@@ -550,7 +779,9 @@ export default function App() {
   if (page === "device-functions")
     return (
       <DeviceFunctionsPage
-        items={deviceRoles}
+        loadPage={(request) =>
+          mapOrganizationPage(request, netbox.deviceRoles.page, mapDeviceRoles)
+        }
         onCreate={(input) => createOrganization("role", input)}
         onDelete={(ids) => deleteOrganization("role", ids)}
         onBack={() => setPage("home")}
@@ -558,16 +789,26 @@ export default function App() {
     );
   if (page === "rack-info")
     return (
-      <RackInfoPage
-        items={racks}
-        onAdd={() => setPage("add-rack")}
-        onDelete={deleteRacks}
-        onBack={() => setPage("home")}
-        onSelect={(rack) => {
-          setSelectedRack(rack);
-          setPage("rack-details");
-        }}
-      />
+      <>
+        <RackInfoPage
+          loadPage={async (request) => {
+            const response = await netbox.racks.page(pageParameters(request));
+            return {
+              count: response.count,
+              results: mapRacks(response.results, devices),
+            };
+          }}
+          onAdd={() => void navigateTo("add-rack")}
+          onDelete={deleteRacks}
+          onBack={() => setPage("home")}
+          onSelect={(rack) => void openRack(rack)}
+        />
+        {appError ? (
+          <p className="app-toast" role="alert">
+            {appError}
+          </p>
+        ) : null}
+      </>
     );
   if (page === "rack-details" && selectedRack)
     return (
@@ -579,7 +820,9 @@ export default function App() {
   if (page === "rack-groups")
     return (
       <RackGroupsPage
-        items={data.rackGroups}
+        loadPage={(request) =>
+          netbox.rackGroups.page(pageParameters(request))
+        }
         onDelete={deleteRackGroups}
         onAdd={() => {
           setRackGroupReturnPage("rack-groups");
@@ -591,7 +834,9 @@ export default function App() {
   if (page === "rack-roles")
     return (
       <RackRolesPage
-        items={rackRoles}
+        loadPage={(request) =>
+          mapOrganizationPage(request, netbox.rackRoles.page, mapRackRoles)
+        }
         onCreate={createRackRole}
         onDelete={deleteRackRoles}
         onBack={() => setPage("home")}
@@ -620,7 +865,9 @@ export default function App() {
   if (page === "sites")
     return (
       <SitesPage
-        items={sites}
+        loadPage={(request) =>
+          mapOrganizationPage(request, netbox.sites.page, mapSites)
+        }
         regions={regions}
         onCreate={(input) => createOrganization("site", input)}
         onDelete={(ids) => deleteOrganization("site", ids)}
@@ -630,7 +877,9 @@ export default function App() {
   if (page === "locations")
     return (
       <LocationsPage
-        items={locations}
+        loadPage={(request) =>
+          mapOrganizationPage(request, netbox.locations.page, mapLocations)
+        }
         sites={sites}
         onCreate={(input) => createOrganization("location", input)}
         onDelete={(ids) => deleteOrganization("location", ids)}
@@ -640,7 +889,9 @@ export default function App() {
   if (page === "regions")
     return (
       <RegionsPage
-        items={regions}
+        loadPage={(request) =>
+          mapOrganizationPage(request, netbox.regions.page, mapRegions)
+        }
         onCreate={(input) => createOrganization("region", input)}
         onDelete={(ids) => deleteOrganization("region", ids)}
         onBack={() => setPage("home")}

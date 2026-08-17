@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
 import QRCode from "qrcode";
 import { PageShell } from "../../../components/PageShell/PageShell";
 import { useAccess } from "../../../context/AccessContext";
@@ -90,7 +90,7 @@ export default function ObjectInfo({
     setSavedMessage(false);
   };
 
-  const saveChanges = async (event: FormEvent<HTMLFormElement>) => {
+  const saveChanges = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSaving(true);
     setSaveError("");
@@ -111,17 +111,20 @@ export default function ObjectInfo({
             : [[field.name, nextValue]];
         }),
       );
-      const updated = await onUpdate({
-        ...draft,
-        name: draft.name.trim(),
-        serial: draft.serial.trim(),
-        assetTag: draft.assetTag.trim(),
-        description: draft.description.trim(),
-        customFields: {
-          ...draft.customFields,
-          ...changedCustomFields,
+      const updated = await onUpdate(
+        {
+          ...draft,
+          name: draft.name.trim(),
+          serial: draft.serial.trim(),
+          assetTag: draft.assetTag.trim(),
+          description: draft.description.trim(),
+          customFields: {
+            ...draft.customFields,
+            ...changedCustomFields,
+          },
         },
-      }, changedCustomFields);
+        changedCustomFields,
+      );
       setDraft(updated);
       setIsEditing(false);
       setSavedMessage(true);
@@ -407,6 +410,14 @@ export default function ObjectInfo({
                     ...current,
                     rackId: rack?.id ?? null,
                     rack: rack?.name ?? "Sem rack",
+                    // Remover apenas o rack não deve apagar a localização
+                    // independente que já está associada ao equipamento.
+                    locationId: rack
+                      ? (rack.location?.id ?? null)
+                      : current.locationId,
+                    region: rack
+                      ? (rack.location?.name ?? "Sem local")
+                      : current.region,
                     allocatedUnit: rack ? current.allocatedUnit : 0,
                   }));
                 }}

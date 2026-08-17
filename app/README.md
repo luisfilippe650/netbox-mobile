@@ -18,7 +18,7 @@ src/services/
 ├── devices/               # Dispositivos, tipos, funções e fabricantes
 ├── racks/                 # Racks e grupos de racks
 ├── sites/                 # Sites, locais e regiões
-├── load-data.ts           # Carregamento inicial coordenado
+├── load-data.ts           # Carregamento autorizado e sob demanda dos catálogos
 ├── view_models.ts         # Modelos normalizados consumidos pela interface
 └── index.ts               # Fachada pública dos serviços
 src/context/
@@ -85,6 +85,13 @@ Para gerar o bundle:
 
 ```bash
 npm run build
+```
+
+Para compilar e sincronizar o frontend com o projeto Android em um único
+comando, evitando gerar um APK com arquivos web antigos:
+
+```bash
+npm run android:sync
 ```
 
 ## Gerar o APK Android com Capacitor
@@ -240,3 +247,7 @@ A configuração bloqueia HTTP claro por padrão. Em produção:
 2. altere `VITE_NETBOX_API_URL` para a URL HTTPS;
 3. não habilite `VITE_ALLOW_INSECURE_HTTP` nem `CAPACITOR_ALLOW_CLEARTEXT`;
 4. mantenha o CORS restrito às origens efetivamente usadas pelo aplicativo.
+
+O manifesto solicita a câmera somente quando o scanner é iniciado e declara o
+hardware como opcional. Backups e transferências dos dados privados do APK são
+bloqueados para impedir que o token da sessão saia do sandbox do aplicativo.

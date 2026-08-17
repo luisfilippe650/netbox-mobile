@@ -20,6 +20,19 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   authenticated?: boolean;
 };
 
+export type PageParameters = Record<
+  string,
+  string | number | boolean | undefined
+> & {
+  limit?: number;
+  offset?: number;
+};
+
+export type PaginatedResult<T> = {
+  count: number;
+  results: T[];
+};
+
 /**
  * Resolve caminhos relativos dentro da API configurada e rejeita URLs que
  * tentem sair de sua origem ou caminho-base. Isso impede que links de
@@ -28,9 +41,10 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 function resolveApiUrl(path: string) {
   let url: URL;
   try {
-    url = path.startsWith("http://") || path.startsWith("https://")
-      ? new URL(path)
-      : new URL(path.replace(/^\/+/, ""), `${netboxConfig.apiUrl}/`);
+    url =
+      path.startsWith("http://") || path.startsWith("https://")
+        ? new URL(path)
+        : new URL(path.replace(/^\/+/, ""), `${netboxConfig.apiUrl}/`);
   } catch {
     throw new NetBoxApiError("A API retornou um endereço inválido.", 0);
   }
@@ -180,6 +194,26 @@ class NetBoxApiClient {
       next = page.next;
     }
     return results;
+  }
+
+  async page<T>(
+    path: string,
+    itemSchema: z.ZodType<T>,
+    parameters: PageParameters = {},
+  ): Promise<PaginatedResult<T>> {
+    const query = new URLSearchParams();
+    Object.entries({ limit: 25, offset: 0, ...parameters }).forEach(
+      ([key, value]) => {
+        if (value !== undefined && String(value) !== "")
+          query.set(key, String(value));
+      },
+    );
+    const page = await this.request(
+      `${path}?${query.toString()}`,
+      {},
+      paginatedSchema(itemSchema),
+    );
+    return { count: page.count, results: page.results };
   }
 
   get<T>(path: string, responseSchema: z.ZodType<T>) {

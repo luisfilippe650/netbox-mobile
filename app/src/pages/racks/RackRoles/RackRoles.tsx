@@ -3,16 +3,18 @@ import {
   type OrganizationCreateInput,
   type OrganizationItem,
 } from "../../organization/OrganizationList/OrganizationList";
+import type { PageRequest, PageResult } from "../../../hooks/usePaginatedData";
+import type { BatchDeleteResult } from "../../../services";
 
 type RackRolesProps = {
-  items: readonly OrganizationItem[];
+  loadPage: (request: PageRequest) => Promise<PageResult<OrganizationItem>>;
   onCreate: (input: OrganizationCreateInput) => Promise<void>;
-  onDelete: (ids: number[]) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<BatchDeleteResult>;
   onBack: () => void;
 };
 
 export default function RackRoles({
-  items,
+  loadPage,
   onCreate,
   onDelete,
   onBack,
@@ -26,7 +28,7 @@ export default function RackRoles({
       sectionTitle="Funções cadastradas"
       searchLabel="Funções de racks"
       emptyMessage="Nenhuma função de rack encontrada"
-      items={items}
+      loadPage={loadPage}
       onCreate={onCreate}
       onDelete={onDelete}
       onBack={onBack}

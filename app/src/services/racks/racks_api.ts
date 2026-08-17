@@ -17,6 +17,8 @@ const endpoints = {
 
 export const racksApi = {
   list: () => netboxClient.list(endpoints.racks, rackSchema),
+  page: (parameters?: Parameters<typeof netboxClient.page>[2]) =>
+    netboxClient.page(endpoints.racks, rackSchema, parameters),
   create: (body: unknown) =>
     netboxClient.create(endpoints.racks, body, rackCreateSchema, rackSchema),
   delete: (id: number) => deleteResource("racks", id),
@@ -24,6 +26,8 @@ export const racksApi = {
 
 export const rackGroupsApi = {
   list: () => netboxClient.list(endpoints.rackGroups, rackGroupSchema),
+  page: (parameters?: Parameters<typeof netboxClient.page>[2]) =>
+    netboxClient.page(endpoints.rackGroups, rackGroupSchema, parameters),
   create: (body: unknown) =>
     netboxClient.create(
       endpoints.rackGroups,
@@ -36,6 +40,8 @@ export const rackGroupsApi = {
 
 export const rackRolesApi = {
   list: () => netboxClient.list(endpoints.rackRoles, rackRoleSchema),
+  page: (parameters?: Parameters<typeof netboxClient.page>[2]) =>
+    netboxClient.page(endpoints.rackRoles, rackRoleSchema, parameters),
   create: (body: unknown) =>
     netboxClient.create(
       endpoints.rackRoles,

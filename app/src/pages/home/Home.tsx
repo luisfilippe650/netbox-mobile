@@ -1,6 +1,6 @@
 import { PageShell } from "../../components/PageShell/PageShell";
 import { useAccess } from "../../context/AccessContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import scannerIcon from "../../assets/icons/leitura_automatica.png";
 import searchIcon from "../../assets/icons/tipos_de_objetos.png";
 import listIcon from "../../assets/icons/inserir_id_manualmente.png";
@@ -14,7 +14,10 @@ import "./Home.css";
 
 type HomeProps = {
   onLogout: () => void;
-  devices: readonly DeviceSummary[];
+  searchDevices: (
+    searchBy: "name" | "id",
+    query: string,
+  ) => Promise<DeviceSummary[]>;
   racks: readonly NetBoxRack[];
   onSelectDevice: (device: DeviceSummary) => void;
   onDelete: (kind: DeleteKind, id: number) => Promise<void>;
@@ -122,7 +125,7 @@ const organizationOptions: readonly ActionOption[] = [
 
 export default function Home({
   onLogout,
-  devices,
+  searchDevices,
   racks,
   onSelectDevice,
   onDelete,
@@ -141,50 +144,104 @@ export default function Home({
   const [deviceSearchTerm, setDeviceSearchTerm] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deviceSearchResults, setDeviceSearchResults] = useState<
+    DeviceSummary[]
+  >([]);
+  const [isSearchingDevices, setIsSearchingDevices] = useState(false);
 
   const canOpenPage = (page: NavigableHomePage) => {
-    const accessByPage: Partial<Record<NavigableHomePage, [string, "view" | "add"]>> = {
-      scanner: ["dcim.device", "view"], devices: ["dcim.device", "view"],
-      "add-device": ["dcim.device", "add"], "add-device-type": ["dcim.devicetype", "add"],
-      "device-types": ["dcim.devicetype", "view"], manufacturers: ["dcim.manufacturer", "view"],
-      "device-functions": ["dcim.devicerole", "view"], "rack-info": ["dcim.rack", "view"],
-      "add-rack": ["dcim.rack", "add"], "add-rack-group": ["dcim.rackgroup", "add"],
-      "rack-groups": ["dcim.rackgroup", "view"], "rack-roles": ["dcim.rackrole", "view"],
-      sites: ["dcim.site", "view"], locations: ["dcim.location", "view"], regions: ["dcim.region", "view"],
+    const accessByPage: Partial<
+      Record<NavigableHomePage, [string, "view" | "add"]>
+    > = {
+      scanner: ["dcim.device", "view"],
+      devices: ["dcim.device", "view"],
+      "add-device": ["dcim.device", "add"],
+      "add-device-type": ["dcim.devicetype", "add"],
+      "device-types": ["dcim.devicetype", "view"],
+      manufacturers: ["dcim.manufacturer", "view"],
+      "device-functions": ["dcim.devicerole", "view"],
+      "rack-info": ["dcim.rack", "view"],
+      "add-rack": ["dcim.rack", "add"],
+      "add-rack-group": ["dcim.rackgroup", "add"],
+      "rack-groups": ["dcim.rackgroup", "view"],
+      "rack-roles": ["dcim.rackrole", "view"],
+      sites: ["dcim.site", "view"],
+      locations: ["dcim.location", "view"],
+      regions: ["dcim.region", "view"],
     };
     const access = accessByPage[page];
     return !access || can(access[0], access[1]);
   };
 
   const canOpenAction = (key: HomePage) => {
-    if (key === "device") return deviceOptions.some((option) => option.page && canOpenPage(option.page));
-    if (key === "rack-info") return rackOptions.some((option) => option.page && canOpenPage(option.page));
-    if (key === "organizacao") return organizationOptions.some((option) => option.page && canOpenPage(option.page));
+    if (key === "device")
+      return deviceOptions.some(
+        (option) => option.page && canOpenPage(option.page),
+      );
+    if (key === "rack-info")
+      return rackOptions.some(
+        (option) => option.page && canOpenPage(option.page),
+      );
+    if (key === "organizacao")
+      return organizationOptions.some(
+        (option) => option.page && canOpenPage(option.page),
+      );
     return true;
   };
   const managedObjectTypes = [
-    "dcim.device", "dcim.devicetype", "dcim.devicerole", "dcim.manufacturer",
-    "dcim.rack", "dcim.rackgroup", "dcim.rackrole", "dcim.site", "dcim.location", "dcim.region",
+    "dcim.device",
+    "dcim.devicetype",
+    "dcim.devicerole",
+    "dcim.manufacturer",
+    "dcim.rack",
+    "dcim.rackgroup",
+    "dcim.rackrole",
+    "dcim.site",
+    "dcim.location",
+    "dcim.region",
   ];
-  const hasWriteAccess = managedObjectTypes.some((objectType) =>
-    can(objectType, "add") || can(objectType, "change") || can(objectType, "delete"),
+  const hasWriteAccess = managedObjectTypes.some(
+    (objectType) =>
+      can(objectType, "add") ||
+      can(objectType, "change") ||
+      can(objectType, "delete"),
   );
 
   const normalizedDeviceSearch = deviceSearchTerm
     .trim()
     .toLocaleLowerCase("pt-BR");
-  const deviceSearchResults = normalizedDeviceSearch
-    ? devices.filter((device) => {
-        const value = deviceSearchBy === "id" ? device.id : device.name;
-        return value
-          .toLocaleLowerCase("pt-BR")
-          .includes(normalizedDeviceSearch);
-      })
-    : [];
-  const deleteOptions = deleteKind === "rack"
-    ? racks.map((item) => ({ id: item.id, label: item.name }))
-    : [];
-  const deleteSelectionLabel = deleteOptions.find((item) => String(item.id) === deleteSelection)?.label ?? "";
+  useEffect(() => {
+    if (!normalizedDeviceSearch) {
+      setDeviceSearchResults([]);
+      setIsSearchingDevices(false);
+      return;
+    }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setIsSearchingDevices(true);
+      void searchDevices(deviceSearchBy, deviceSearchTerm.trim())
+        .then((results) => {
+          if (active) setDeviceSearchResults(results);
+        })
+        .catch(() => {
+          if (active) setDeviceSearchResults([]);
+        })
+        .finally(() => {
+          if (active) setIsSearchingDevices(false);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [deviceSearchBy, deviceSearchTerm, normalizedDeviceSearch, searchDevices]);
+  const deleteOptions =
+    deleteKind === "rack"
+      ? racks.map((item) => ({ id: item.id, label: item.name }))
+      : [];
+  const deleteSelectionLabel =
+    deleteOptions.find((item) => String(item.id) === deleteSelection)?.label ??
+    "";
 
   const openActionOptions = (action: HomeAction) => {
     setSelectedAction(action);
@@ -211,13 +268,21 @@ export default function Home({
 
   const finishDeletion = async () => {
     if (!deleteKind || !deleteSelection) return;
-    setIsDeleting(true); setDeleteError("");
+    setIsDeleting(true);
+    setDeleteError("");
     try {
       await onDelete(deleteKind, Number(deleteSelection));
-      setConfirmDelete(false); setDeleteMessage("Item excluído com sucesso.");
+      setConfirmDelete(false);
+      setDeleteMessage("Item excluído com sucesso.");
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : "Não foi possível excluir o item.");
-    } finally { setIsDeleting(false); }
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível excluir o item.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -245,7 +310,14 @@ export default function Home({
             <div className="home__menu-popover">
               <div className="home__menu-user">
                 <strong>{user?.display ?? "Usuário"}</strong>
-                <small>{isUnrestricted ? "Acesso administrativo" : !hasWriteAccess ? "Somente leitura" : user?.groups.map((group) => group.name).join(", ") || "Acesso personalizado"}</small>
+                <small>
+                  {isUnrestricted
+                    ? "Acesso administrativo"
+                    : !hasWriteAccess
+                      ? "Somente leitura"
+                      : user?.groups.map((group) => group.name).join(", ") ||
+                        "Acesso personalizado"}
+                </small>
               </div>
               <button
                 type="button"
@@ -276,39 +348,43 @@ export default function Home({
       <section className="home__quick-section" aria-label="Ações rápidas">
         <h2 className="home__quick-title">Ações rápidas</h2>
         <div className="home__quick-actions">
-          {can("dcim.device", "view") ? <button
-            className="home__quick-action home__quick-action--primary"
-            type="button"
-            onClick={() => onOpenPage("scanner")}
-          >
-            <span className="home__quick-icon">
-              <img src={scannerIcon} alt="" />
-            </span>
-            <span>
-              <strong>Scanner</strong>
-              <small>Leia um QR code</small>
-            </span>
-          </button> : null}
-          {can("dcim.device", "view") ? <button
-            className="home__quick-action"
-            type="button"
-            onClick={() =>
-              openActionOptions({
-                key: "object-info",
-                title: "Buscar equipamento",
-                text: "Pesquise pelo nome ou ID",
-                icon: searchIcon,
-              })
-            }
-          >
-            <span className="home__quick-icon">
-              <img src={searchIcon} alt="" />
-            </span>
-            <span>
-              <strong>Buscar equipamento</strong>
-              <small>Consulte detalhes</small>
-            </span>
-          </button> : null}
+          {can("dcim.device", "view") ? (
+            <button
+              className="home__quick-action home__quick-action--primary"
+              type="button"
+              onClick={() => onOpenPage("scanner")}
+            >
+              <span className="home__quick-icon">
+                <img src={scannerIcon} alt="" />
+              </span>
+              <span>
+                <strong>Scanner</strong>
+                <small>Leia um QR code</small>
+              </span>
+            </button>
+          ) : null}
+          {can("dcim.device", "view") ? (
+            <button
+              className="home__quick-action"
+              type="button"
+              onClick={() =>
+                openActionOptions({
+                  key: "object-info",
+                  title: "Buscar equipamento",
+                  text: "Pesquise pelo nome ou ID",
+                  icon: searchIcon,
+                })
+              }
+            >
+              <span className="home__quick-icon">
+                <img src={searchIcon} alt="" />
+              </span>
+              <span>
+                <strong>Buscar equipamento</strong>
+                <small>Consulte detalhes</small>
+              </span>
+            </button>
+          ) : null}
         </div>
       </section>
 
@@ -319,30 +395,32 @@ export default function Home({
           </div>
         </div>
         <div className="page-grid home__grid">
-          {actions.filter((action) => canOpenAction(action.key)).map((action) => (
-            <button
-              key={action.key}
-              className="home__card"
-              type="button"
-              onClick={() => openActionOptions(action)}
-            >
-              {action.key === "rack-info" ||
-              action.key === "device" ||
-              action.key === "organizacao" ? (
-                <span
-                  className={`home__icon ${action.key === "rack-info" ? "home__icon--rack" : action.key === "organizacao" ? "home__icon--row" : "home__icon--large"}`}
-                >
-                  <img src={action.icon} alt="" />
+          {actions
+            .filter((action) => canOpenAction(action.key))
+            .map((action) => (
+              <button
+                key={action.key}
+                className="home__card"
+                type="button"
+                onClick={() => openActionOptions(action)}
+              >
+                {action.key === "rack-info" ||
+                action.key === "device" ||
+                action.key === "organizacao" ? (
+                  <span
+                    className={`home__icon ${action.key === "rack-info" ? "home__icon--rack" : action.key === "organizacao" ? "home__icon--row" : "home__icon--large"}`}
+                  >
+                    <img src={action.icon} alt="" />
+                  </span>
+                ) : (
+                  <img className="home__icon" src={action.icon} alt="" />
+                )}
+                <span className="home__card-content">
+                  <strong className="home__card-title">{action.title}</strong>
+                  <span className="page-section__text">{action.text}</span>
                 </span>
-              ) : (
-                <img className="home__icon" src={action.icon} alt="" />
-              )}
-              <span className="home__card-content">
-                <strong className="home__card-title">{action.title}</strong>
-                <span className="page-section__text">{action.text}</span>
-              </span>
-            </button>
-          ))}
+              </button>
+            ))}
         </div>
       </section>
 
@@ -549,7 +627,11 @@ export default function Home({
                       Tem certeza que deseja excluir?
                     </strong>
                     <span>{deleteSelectionLabel}</span>
-                    {deleteError ? <small className="home__delete-error" role="alert">{deleteError}</small> : null}
+                    {deleteError ? (
+                      <small className="home__delete-error" role="alert">
+                        {deleteError}
+                      </small>
+                    ) : null}
                     <div>
                       <button
                         type="button"
@@ -570,9 +652,7 @@ export default function Home({
                 ) : (
                   <>
                     <label className="home__delete-select">
-                      <span>
-                        Selecione o item
-                      </span>
+                      <span>Selecione o item</span>
                       <select
                         value={deleteSelection}
                         onChange={(event) =>
@@ -660,7 +740,9 @@ export default function Home({
                     className="home__device-search-results"
                     aria-live="polite"
                   >
-                    {deviceSearchResults.length > 0 ? (
+                    {isSearchingDevices ? (
+                      <p>Buscando equipamentos…</p>
+                    ) : deviceSearchResults.length > 0 ? (
                       deviceSearchResults.map((device) => (
                         <button
                           type="button"
@@ -698,23 +780,27 @@ export default function Home({
                       : selectedAction.key === "rack-info"
                         ? rackOptions
                         : organizationOptions
-                    ).filter((option) => !option.page || canOpenPage(option.page)).map((option, index) => (
-                      <button
-                        className={`home__modal-option${(selectedAction.key === "device" || selectedAction.key === "rack-info") && index === 0 ? " home__modal-option--primary" : ""}${option.tone ? ` home__modal-option--${option.tone}` : ""}`}
-                        key={option.label}
-                        type="button"
-                        onClick={() => {
-                          if (option.label === "Deletar rack") {
-                            openDeleteSelection("rack");
-                            return;
-                          }
-                          if (option.page) onOpenPage(option.page);
-                          closeActionOptions();
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    ))
+                    )
+                      .filter(
+                        (option) => !option.page || canOpenPage(option.page),
+                      )
+                      .map((option, index) => (
+                        <button
+                          className={`home__modal-option${(selectedAction.key === "device" || selectedAction.key === "rack-info") && index === 0 ? " home__modal-option--primary" : ""}${option.tone ? ` home__modal-option--${option.tone}` : ""}`}
+                          key={option.label}
+                          type="button"
+                          onClick={() => {
+                            if (option.label === "Deletar rack") {
+                              openDeleteSelection("rack");
+                              return;
+                            }
+                            if (option.page) onOpenPage(option.page);
+                            closeActionOptions();
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      ))
                   : null}
               </div>
             )}

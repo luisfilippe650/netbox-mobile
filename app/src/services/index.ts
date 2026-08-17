@@ -19,7 +19,7 @@ import {
 export { NetBoxApiError, netboxClient } from "./client";
 export type { AuthenticatedUser, NetBoxObjectPermission } from "./client";
 export { loadNetBoxData } from "./load-data";
-export type { NetBoxData } from "./load-data";
+export type { NetBoxData, NetBoxDataKey } from "./load-data";
 export { deviceRoleColors } from "./devices/devices_dto";
 export {
   mapDevice,
@@ -32,6 +32,7 @@ export type * from "./racks/racks_dto";
 export { mapLocations, mapRegions, mapSites } from "./sites/sites_service";
 export type * from "./sites/sites_dto";
 export type * from "./view_models";
+export { deleteResources } from "./batch-delete";
 
 export const netbox = {
   devices: devicesService,

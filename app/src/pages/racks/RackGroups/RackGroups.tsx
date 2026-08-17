@@ -1,18 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Pagination } from "../../../components/Pagination/Pagination";
 import { PageShell } from "../../../components/PageShell/PageShell";
 import { useAccess } from "../../../context/AccessContext";
-import type { NetBoxRackGroup } from "../../../services";
+import {
+  usePaginatedData,
+  type PageRequest,
+  type PageResult,
+} from "../../../hooks/usePaginatedData";
+import type { BatchDeleteResult, NetBoxRackGroup } from "../../../services";
 import "../../organization/OrganizationList/OrganizationList.css";
 
 type RackGroupsProps = {
-  items: readonly NetBoxRackGroup[];
+  loadPage: (request: PageRequest) => Promise<PageResult<NetBoxRackGroup>>;
   onAdd: () => void;
-  onDelete: (ids: number[]) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<BatchDeleteResult>;
   onBack: () => void;
 };
 
 export default function RackGroups({
-  items,
+  loadPage,
   onAdd,
   onDelete,
   onBack,
@@ -29,15 +35,13 @@ export default function RackGroups({
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  const filteredItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
-    if (!normalizedQuery) return items;
-    return items.filter((item) =>
-      `${item.name ?? item.display} ${item.description ?? ""} ${item.slug ?? ""}`
-        .toLocaleLowerCase("pt-BR")
-        .includes(normalizedQuery),
-    );
-  }, [items, query]);
+  const pagination = usePaginatedData({ loadPage, query });
+  const { items } = pagination;
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setShowDeleteConfirmation(false);
+  }, [pagination.page, query]);
 
   const toggleSelection = (id: number) => {
     setSelectedIds((current) => {
@@ -52,8 +56,16 @@ export default function RackGroups({
     setIsDeleting(true);
     setError("");
     try {
-      await onDelete([...selectedIds]);
-      setSelectedIds(new Set());
+      const result = await onDelete([...selectedIds]);
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        result.removedIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      pagination.reload();
+      if (result.failedMessages.length > 0) {
+        throw new Error(result.failedMessages.join("\n"));
+      }
       setShowDeleteConfirmation(false);
     } catch (deleteError) {
       setError(
@@ -95,7 +107,7 @@ export default function RackGroups({
       >
         <div>
           <h2>Grupos cadastrados</h2>
-          <p>{filteredItems.length} grupo(s) encontrado(s)</p>
+          <p>{pagination.total} grupo(s) encontrado(s)</p>
         </div>
         <div className="organization__actions">
           {canAdd ? (
@@ -116,7 +128,7 @@ export default function RackGroups({
       </section>
 
       <div className="organization__list">
-        {filteredItems.map((item) => {
+        {items.map((item) => {
           const name = item.name ?? item.display;
           return (
             <article
@@ -164,13 +176,27 @@ export default function RackGroups({
         })}
       </div>
 
-      {filteredItems.length === 0 ? (
+      {pagination.isLoading ? <p role="status">Carregando…</p> : null}
+      {pagination.error ? (
+        <p className="organization__error" role="alert">
+          {pagination.error}
+        </p>
+      ) : null}
+      {!pagination.isLoading && items.length === 0 ? (
         <section className="organization__empty" role="status">
           <span aria-hidden="true">⌕</span>
           <strong>Nenhum grupo de racks encontrado</strong>
           <p>Tente buscar usando outro nome.</p>
         </section>
       ) : null}
+
+      <Pagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        disabled={pagination.isLoading}
+        onPageChange={pagination.setPage}
+      />
 
       <button className="organization__back" type="button" onClick={onBack}>
         Voltar

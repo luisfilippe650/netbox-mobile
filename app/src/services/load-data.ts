@@ -44,45 +44,51 @@ export type NetBoxData = {
   regions: NetBoxRegion[];
 };
 
+export type NetBoxDataKey = keyof NetBoxData;
+export type CanViewObject = (objectType: string) => boolean;
+
+const catalogObjectTypes: Record<NetBoxDataKey, string> = {
+  devices: "dcim.device",
+  deviceTypes: "dcim.devicetype",
+  deviceRoles: "dcim.devicerole",
+  manufacturers: "dcim.manufacturer",
+  racks: "dcim.rack",
+  rackGroups: "dcim.rackgroup",
+  rackRoles: "dcim.rackrole",
+  sites: "dcim.site",
+  locations: "dcim.location",
+  regions: "dcim.region",
+};
+
+const catalogLoaders: {
+  [Key in NetBoxDataKey]: () => Promise<NetBoxData[Key]>;
+} = {
+  devices: devicesService.list,
+  deviceTypes: deviceTypesService.list,
+  deviceRoles: deviceRolesService.list,
+  manufacturers: manufacturersService.list,
+  racks: racksService.list,
+  rackGroups: rackGroupsService.list,
+  rackRoles: rackRolesService.list,
+  sites: sitesService.list,
+  locations: locationsService.list,
+  regions: regionsService.list,
+};
+
 /**
- * Carrega em paralelo os catálogos necessários para montar a tela principal.
- * A promessa falha por inteiro se qualquer catálogo não puder ser carregado,
- * impedindo que a UI trabalhe com um conjunto de dados parcialmente coerente.
+ * Carrega em paralelo apenas os catálogos solicitados e autorizados. Dessa
+ * forma, a abertura de uma página não depende de domínios sem relação com ela.
  */
-export async function loadNetBoxData(): Promise<NetBoxData> {
-  const [
-    devices,
-    deviceTypes,
-    deviceRoles,
-    manufacturers,
-    racks,
-    rackGroups,
-    rackRoles,
-    sites,
-    locations,
-    regions,
-  ] = await Promise.all([
-    devicesService.list(),
-    deviceTypesService.list(),
-    deviceRolesService.list(),
-    manufacturersService.list(),
-    racksService.list(),
-    rackGroupsService.list(),
-    rackRolesService.list(),
-    sitesService.list(),
-    locationsService.list(),
-    regionsService.list(),
-  ]);
-  return {
-    devices,
-    deviceTypes,
-    deviceRoles,
-    manufacturers,
-    racks,
-    rackGroups,
-    rackRoles,
-    sites,
-    locations,
-    regions,
-  };
+export async function loadNetBoxData(
+  keys: readonly NetBoxDataKey[],
+  canView: CanViewObject,
+): Promise<Partial<NetBoxData>> {
+  const permittedKeys = keys.filter((key) => canView(catalogObjectTypes[key]));
+  const entries = await Promise.all(
+    permittedKeys.map(
+      async (key) => [key, await catalogLoaders[key]()] as const,
+    ),
+  );
+
+  return Object.fromEntries(entries) as Partial<NetBoxData>;
 }

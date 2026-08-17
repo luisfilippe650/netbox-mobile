@@ -1,6 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Pagination } from "../../../components/Pagination/Pagination";
 import { PageShell } from "../../../components/PageShell/PageShell";
 import { useAccess } from "../../../context/AccessContext";
+import {
+  usePaginatedData,
+  type PageRequest,
+  type PageResult,
+} from "../../../hooks/usePaginatedData";
+import type { BatchDeleteResult } from "../../../services";
 import rackIcon from "../../../assets/icons/rack_medio.png";
 import { getOccupiedUnits, type RackSummary } from "../shared/data";
 import "../../organization/OrganizationList/OrganizationList.css";
@@ -9,9 +16,9 @@ import "./RackInfo.css";
 type RackInfoProps = {
   onBack: () => void;
   onAdd: () => void;
-  onDelete: (ids: number[]) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<BatchDeleteResult>;
   onSelect: (rack: RackSummary) => void;
-  items: readonly RackSummary[];
+  loadPage: (request: PageRequest) => Promise<PageResult<RackSummary>>;
 };
 
 export default function RackInfo({
@@ -19,7 +26,7 @@ export default function RackInfo({
   onAdd,
   onDelete,
   onSelect,
-  items,
+  loadPage,
 }: RackInfoProps) {
   const { can } = useAccess();
   const canAdd = can("dcim.rack", "add");
@@ -30,15 +37,13 @@ export default function RackInfo({
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  const filteredItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
-    if (!normalizedQuery) return items;
-    return items.filter((rack) =>
-      `${rack.name} ${rack.id} ${rack.site} ${rack.location} ${rack.group} ${rack.role}`
-        .toLocaleLowerCase("pt-BR")
-        .includes(normalizedQuery),
-    );
-  }, [items, query]);
+  const pagination = usePaginatedData({ loadPage, query });
+  const { items } = pagination;
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setShowDeleteConfirmation(false);
+  }, [pagination.page, query]);
 
   const toggleSelection = (id: number) => {
     setSelectedIds((current) => {
@@ -53,8 +58,16 @@ export default function RackInfo({
     setIsDeleting(true);
     setError("");
     try {
-      await onDelete([...selectedIds]);
-      setSelectedIds(new Set());
+      const result = await onDelete([...selectedIds]);
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        result.removedIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      pagination.reload();
+      if (result.failedMessages.length > 0) {
+        throw new Error(result.failedMessages.join("\n"));
+      }
       setShowDeleteConfirmation(false);
     } catch (deleteError) {
       setError(
@@ -93,7 +106,7 @@ export default function RackInfo({
       <section className="organization__heading" aria-label="Resumo dos racks">
         <div>
           <h2>Racks cadastrados</h2>
-          <p>{filteredItems.length} rack(s) encontrado(s)</p>
+          <p>{pagination.total} rack(s) encontrado(s)</p>
         </div>
         <div className="organization__actions">
           {canAdd ? (
@@ -114,7 +127,7 @@ export default function RackInfo({
       </section>
 
       <div className="rack-list">
-        {filteredItems.map((rack) => {
+        {items.map((rack) => {
           const occupiedUnits = getOccupiedUnits(rack);
           return (
             <article
@@ -155,18 +168,22 @@ export default function RackInfo({
                 <span className="rack-list__location">
                   {rack.location} · {rack.site}
                 </span>
-                <span className="rack-list__usage">
-                  <span>
-                    <i
-                      style={{
-                        width: `${(occupiedUnits / rack.height) * 100}%`,
-                      }}
-                    />
+                {rack.devices.length > 0 ? (
+                  <span className="rack-list__usage">
+                    <span>
+                      <i
+                        style={{
+                          width: `${(occupiedUnits / rack.height) * 100}%`,
+                        }}
+                      />
+                    </span>
+                    <small>
+                      {occupiedUnits}U ocupadas de {rack.height}U
+                    </small>
                   </span>
-                  <small>
-                    {occupiedUnits}U ocupadas de {rack.height}U
-                  </small>
-                </span>
+                ) : (
+                  <small>Abra o rack para consultar sua ocupação.</small>
+                )}
               </span>
               <span className="rack-list__arrow" aria-hidden="true">
                 ›
@@ -176,9 +193,22 @@ export default function RackInfo({
         })}
       </div>
 
-      {filteredItems.length === 0 ? (
+      {pagination.isLoading ? <p role="status">Carregando…</p> : null}
+      {pagination.error ? (
+        <p className="rack-list__error" role="alert">
+          {pagination.error}
+        </p>
+      ) : null}
+      {!pagination.isLoading && items.length === 0 ? (
         <p className="rack-list__empty">Nenhum rack encontrado.</p>
       ) : null}
+      <Pagination
+        disabled={pagination.isLoading}
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setPage}
+      />
       <button className="rack-list__back" type="button" onClick={onBack}>
         Voltar
       </button>

@@ -27,7 +27,10 @@ const endpoints = {
 } as const;
 
 export const devicesApi = {
-  list: () => netboxClient.list(endpoints.devices, deviceSchema),
+  list: (parameters: Record<string, string | number | undefined> = {}) =>
+    netboxClient.list(endpoints.devices, deviceSchema, parameters),
+  page: (parameters?: Parameters<typeof netboxClient.page>[2]) =>
+    netboxClient.page(endpoints.devices, deviceSchema, parameters),
   create: (body: unknown) =>
     netboxClient.create(
       endpoints.devices,
@@ -70,6 +73,8 @@ export const customFieldsApi = {
 
 export const deviceTypesApi = {
   list: () => netboxClient.list(endpoints.deviceTypes, deviceTypeSchema),
+  page: (parameters?: Parameters<typeof netboxClient.page>[2]) =>
+    netboxClient.page(endpoints.deviceTypes, deviceTypeSchema, parameters),
   create: (body: unknown) =>
     netboxClient.create(
       endpoints.deviceTypes,
@@ -82,6 +87,8 @@ export const deviceTypesApi = {
 
 export const deviceRolesApi = {
   list: () => netboxClient.list(endpoints.deviceRoles, deviceRoleSchema),
+  page: (parameters?: Parameters<typeof netboxClient.page>[2]) =>
+    netboxClient.page(endpoints.deviceRoles, deviceRoleSchema, parameters),
   create: (body: unknown) =>
     netboxClient.create(
       endpoints.deviceRoles,
@@ -94,6 +101,8 @@ export const deviceRolesApi = {
 
 export const manufacturersApi = {
   list: () => netboxClient.list(endpoints.manufacturers, manufacturerSchema),
+  page: (parameters?: Parameters<typeof netboxClient.page>[2]) =>
+    netboxClient.page(endpoints.manufacturers, manufacturerSchema, parameters),
   create: (body: unknown) =>
     netboxClient.create(
       endpoints.manufacturers,

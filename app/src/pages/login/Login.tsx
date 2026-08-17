@@ -5,10 +5,11 @@ import "../../utils/colors.css";
 import "./Login.css";
 
 type LoginProps = {
+  initialError?: string;
   onLogin: (username: string, password: string) => Promise<void>;
 };
 
-export default function Login({ onLogin }: LoginProps) {
+export default function Login({ initialError = "", onLogin }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -95,9 +96,9 @@ export default function Login({ onLogin }: LoginProps) {
               </div>
             </div>
 
-            {error ? (
+            {error || initialError ? (
               <p className="login-error" role="alert">
-                {error}
+                {error || initialError}
               </p>
             ) : null}
 

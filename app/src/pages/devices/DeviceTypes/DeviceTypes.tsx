@@ -1,18 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Pagination } from "../../../components/Pagination/Pagination";
 import { PageShell } from "../../../components/PageShell/PageShell";
 import { useAccess } from "../../../context/AccessContext";
-import type { NetBoxDeviceType } from "../../../services";
+import {
+  usePaginatedData,
+  type PageRequest,
+  type PageResult,
+} from "../../../hooks/usePaginatedData";
+import type { BatchDeleteResult, NetBoxDeviceType } from "../../../services";
 import "../../organization/OrganizationList/OrganizationList.css";
 
 type DeviceTypesProps = {
-  items: readonly NetBoxDeviceType[];
+  loadPage: (request: PageRequest) => Promise<PageResult<NetBoxDeviceType>>;
   onAdd: () => void;
-  onDelete: (ids: number[]) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<BatchDeleteResult>;
   onBack: () => void;
 };
 
 export default function DeviceTypes({
-  items,
+  loadPage,
   onAdd,
   onDelete,
   onBack,
@@ -29,16 +35,13 @@ export default function DeviceTypes({
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  const filteredItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
-    if (!normalizedQuery) return items;
+  const pagination = usePaginatedData({ loadPage, query });
+  const { items } = pagination;
 
-    return items.filter((item) =>
-      `${item.model} ${item.manufacturer.name ?? item.manufacturer.display} ${item.description} ${item.slug}`
-        .toLocaleLowerCase("pt-BR")
-        .includes(normalizedQuery),
-    );
-  }, [items, query]);
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setShowDeleteConfirmation(false);
+  }, [pagination.page, query]);
 
   const toggleSelection = (id: number) => {
     setSelectedIds((current) => {
@@ -53,8 +56,16 @@ export default function DeviceTypes({
     setIsDeleting(true);
     setError("");
     try {
-      await onDelete([...selectedIds]);
-      setSelectedIds(new Set());
+      const result = await onDelete([...selectedIds]);
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        result.removedIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      pagination.reload();
+      if (result.failedMessages.length > 0) {
+        throw new Error(result.failedMessages.join("\n"));
+      }
       setShowDeleteConfirmation(false);
     } catch (deleteError) {
       setError(
@@ -98,7 +109,7 @@ export default function DeviceTypes({
       >
         <div>
           <h2>Tipos cadastrados</h2>
-          <p>{filteredItems.length} tipo(s) encontrado(s)</p>
+          <p>{pagination.total} tipo(s) encontrado(s)</p>
         </div>
         <div className="organization__actions">
           {canAdd ? (
@@ -119,7 +130,7 @@ export default function DeviceTypes({
       </section>
 
       <div className="organization__list">
-        {filteredItems.map((item) => {
+        {items.map((item) => {
           const manufacturer =
             item.manufacturer.name ?? item.manufacturer.display;
           return (
@@ -171,13 +182,27 @@ export default function DeviceTypes({
         })}
       </div>
 
-      {filteredItems.length === 0 ? (
+      {pagination.isLoading ? <p role="status">Carregando…</p> : null}
+      {pagination.error ? (
+        <p className="organization__error" role="alert">
+          {pagination.error}
+        </p>
+      ) : null}
+      {!pagination.isLoading && items.length === 0 ? (
         <section className="organization__empty" role="status">
           <span aria-hidden="true">⌕</span>
           <strong>Nenhum tipo de equipamento encontrado</strong>
           <p>Tente buscar usando outro modelo ou fabricante.</p>
         </section>
       ) : null}
+
+      <Pagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        disabled={pagination.isLoading}
+        onPageChange={pagination.setPage}
+      />
 
       <button className="organization__back" type="button" onClick={onBack}>
         Voltar

@@ -1,10 +1,17 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
 import { PageShell } from "../../../components/PageShell/PageShell";
+import { Pagination } from "../../../components/Pagination/Pagination";
 import {
   defaultDeviceRoleColor,
   DeviceRoleColorPicker,
 } from "../../devices/shared/DeviceRoleColorPicker";
 import { useAccess } from "../../../context/AccessContext";
+import {
+  usePaginatedData,
+  type PageRequest,
+  type PageResult,
+} from "../../../hooks/usePaginatedData";
+import type { BatchDeleteResult } from "../../../services";
 import "./OrganizationList.css";
 
 export type OrganizationItem = {
@@ -39,11 +46,11 @@ type OrganizationListProps = {
   sectionTitle: string;
   searchLabel: string;
   emptyMessage: string;
-  items: readonly OrganizationItem[];
+  loadPage: (request: PageRequest) => Promise<PageResult<OrganizationItem>>;
   siteOptions?: readonly OrganizationItem[];
   regionOptions?: readonly OrganizationItem[];
   onCreate: (input: OrganizationCreateInput) => Promise<void>;
-  onDelete: (ids: number[]) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<BatchDeleteResult>;
   onBack: () => void;
 };
 
@@ -55,7 +62,7 @@ export function OrganizationList({
   sectionTitle,
   searchLabel,
   emptyMessage,
-  items,
+  loadPage,
   siteOptions = [],
   regionOptions = [],
   onCreate,
@@ -88,18 +95,13 @@ export function OrganizationList({
   const isRackFunctionPage = singular === "Função de rack";
   const hasRoleColor = isDeviceFunctionPage || isRackFunctionPage;
   const hasDetails = isSitePage || isLocationPage;
-  const organizationItems = items;
+  const pagination = usePaginatedData({ loadPage, query });
+  const items = pagination.items;
 
-  const filteredItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
-    if (!normalizedQuery) return organizationItems;
-
-    return organizationItems.filter((item) =>
-      `${item.name} ${item.description} ${item.detail}`
-        .toLocaleLowerCase("pt-BR")
-        .includes(normalizedQuery),
-    );
-  }, [organizationItems, query]);
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setShowDeleteConfirmation(false);
+  }, [pagination.page, query]);
 
   const toggleSelection = (id: string) => {
     setSelectedIds((current) => {
@@ -114,8 +116,14 @@ export function OrganizationList({
     setIsSubmitting(true);
     setError("");
     try {
-      await onDelete([...selectedIds].map(Number));
-      setSelectedIds(new Set());
+      const result = await onDelete([...selectedIds].map(Number));
+      const removedIds = new Set(result.removedIds.map(String));
+      setSelectedIds(
+        (current) => new Set([...current].filter((id) => !removedIds.has(id))),
+      );
+      pagination.reload();
+      if (result.failedMessages.length > 0)
+        throw new Error(result.failedMessages.join(" · "));
       setShowDeleteConfirmation(false);
     } catch (deleteError) {
       setError(
@@ -128,7 +136,7 @@ export function OrganizationList({
     }
   };
 
-  const addItem = async (event: FormEvent<HTMLFormElement>) => {
+  const addItem = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
     setError("");
@@ -141,6 +149,7 @@ export function OrganizationList({
         ...(hasRoleColor ? { color: newDeviceRoleColor } : {}),
         ...(isDeviceFunctionPage ? { vmRole: newVmRole === "true" } : {}),
       });
+      pagination.reload();
       setNewName("");
       setNewRegion("");
       setNewSite("");
@@ -176,9 +185,9 @@ export function OrganizationList({
           placeholder={`Buscar ${searchLabel.toLocaleLowerCase("pt-BR")}`}
         />
       </label>
-      {error ? (
+      {error || pagination.error ? (
         <p className="organization__error" role="alert">
-          {error}
+          {error || pagination.error}
         </p>
       ) : null}
 
@@ -189,8 +198,8 @@ export function OrganizationList({
         <div>
           <h2>{sectionTitle}</h2>
           <p>
-            {filteredItems.length}{" "}
-            {filteredItems.length === 1
+            {pagination.total}{" "}
+            {pagination.total === 1
               ? singular.toLocaleLowerCase("pt-BR")
               : "itens"}{" "}
             encontrado(s)
@@ -220,7 +229,10 @@ export function OrganizationList({
       </section>
 
       <div className="organization__list">
-        {filteredItems.map((item) => (
+        {pagination.isLoading ? (
+          <p className="organization__empty">Carregando itens…</p>
+        ) : null}
+        {items.map((item) => (
           <article
             className={`organization__card${hasDetails ? " organization__card--clickable" : ""}`}
             key={item.id}
@@ -278,13 +290,21 @@ export function OrganizationList({
         ))}
       </div>
 
-      {filteredItems.length === 0 ? (
+      {!pagination.isLoading && items.length === 0 ? (
         <section className="organization__empty" role="status">
           <span aria-hidden="true">⌕</span>
           <strong>{emptyMessage}</strong>
           <p>Tente buscar usando outro nome.</p>
         </section>
       ) : null}
+
+      <Pagination
+        disabled={pagination.isLoading}
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setPage}
+      />
 
       <button className="organization__back" type="button" onClick={onBack}>
         Voltar

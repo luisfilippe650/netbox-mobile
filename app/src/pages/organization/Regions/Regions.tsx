@@ -3,17 +3,19 @@ import {
   type OrganizationCreateInput,
   type OrganizationItem,
 } from "../OrganizationList/OrganizationList";
+import type { PageRequest, PageResult } from "../../../hooks/usePaginatedData";
+import type { BatchDeleteResult } from "../../../services";
 
 type RegionsProps = {
   onBack: () => void;
-  items: readonly OrganizationItem[];
+  loadPage: (request: PageRequest) => Promise<PageResult<OrganizationItem>>;
   onCreate: (input: OrganizationCreateInput) => Promise<void>;
-  onDelete: (ids: number[]) => Promise<void>;
+  onDelete: (ids: number[]) => Promise<BatchDeleteResult>;
 };
 
 export default function Regions({
   onBack,
-  items,
+  loadPage,
   onCreate,
   onDelete,
 }: RegionsProps) {
@@ -26,7 +28,7 @@ export default function Regions({
       sectionTitle="Regiões cadastradas"
       searchLabel="Regiões"
       emptyMessage="Nenhuma região encontrada"
-      items={items}
+      loadPage={loadPage}
       onCreate={onCreate}
       onDelete={onDelete}
       onBack={onBack}

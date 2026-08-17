@@ -41,6 +41,11 @@ export type OrganizationSummary = {
   color?: string;
 };
 
+export type BatchDeleteResult = {
+  removedIds: number[];
+  failedMessages: string[];
+};
+
 export type RackSummary = {
   id: string;
   apiId: number;

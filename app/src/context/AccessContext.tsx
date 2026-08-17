@@ -1,13 +1,13 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import type { AuthenticatedUser, NetBoxObjectPermission } from "../services";
-
-export type AccessAction = "view" | "add" | "change" | "delete";
+import type { AuthenticatedUser } from "../services";
+import { hasObjectAccess, type AccessAction } from "./access-control";
 
 type AccessContextValue = {
   user: AuthenticatedUser | null;
@@ -19,51 +19,31 @@ type AccessContextValue = {
 
 const AccessContext = createContext<AccessContextValue | null>(null);
 
-function includesGrant(
-  permission: NetBoxObjectPermission,
-  objectType: string,
-  action: AccessAction,
-) {
-  return (
-    permission.enabled &&
-    permission.object_types.includes(objectType) &&
-    permission.actions.includes(action)
-  );
-}
-
 export function AccessProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [unrestricted, setUnrestricted] = useState(false);
-  const permissions = useMemo(
-    () =>
-      user
-        ? [
-            ...user.permissions,
-            ...user.groups.flatMap((group) => group.permissions),
-          ]
-        : [],
-    [user],
+  const setSessionAccess = useCallback(
+    (nextUser: AuthenticatedUser, nextUnrestricted: boolean) => {
+      setUser(nextUser);
+      setUnrestricted(nextUnrestricted);
+    },
+    [],
   );
+  const clearSessionAccess = useCallback(() => {
+    setUser(null);
+    setUnrestricted(false);
+  }, []);
 
   const value = useMemo<AccessContextValue>(
     () => ({
       user,
       isUnrestricted: unrestricted,
-      setSessionAccess: (nextUser, nextUnrestricted) => {
-        setUser(nextUser);
-        setUnrestricted(nextUnrestricted);
-      },
-      clearSessionAccess: () => {
-        setUser(null);
-        setUnrestricted(false);
-      },
+      setSessionAccess,
+      clearSessionAccess,
       can: (objectType, action) =>
-        unrestricted ||
-        permissions.some((permission) =>
-          includesGrant(permission, objectType, action),
-        ),
+        hasObjectAccess(user, unrestricted, objectType, action),
     }),
-    [permissions, unrestricted, user],
+    [clearSessionAccess, setSessionAccess, unrestricted, user],
   );
 
   return (
@@ -71,6 +51,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// O hook fica junto ao Provider para manter uma única API pública do contexto.
+// oxlint-disable-next-line react/only-export-components
 export function useAccess() {
   const context = useContext(AccessContext);
   if (!context)

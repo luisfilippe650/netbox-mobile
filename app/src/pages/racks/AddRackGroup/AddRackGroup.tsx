@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { PageShell } from "../../../components/PageShell/PageShell";
 import "../AddRack/AddRack.css";
 
@@ -9,7 +9,7 @@ type AddRackGroupProps = {
 export default function AddRackGroup({ onBack, onCreate }: AddRackGroupProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     setIsSubmitting(true);

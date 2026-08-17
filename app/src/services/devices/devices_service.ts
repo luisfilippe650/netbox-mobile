@@ -34,7 +34,8 @@ async function loadDeviceCustomFields(
       field.related_object_type &&
       (!requireRelatedData || needsInputData(field)),
   );
-  let objectTypes: Awaited<ReturnType<typeof customFieldsApi.listObjectTypes>> = [];
+  let objectTypes: Awaited<ReturnType<typeof customFieldsApi.listObjectTypes>> =
+    [];
   if (hasRelatedFields) {
     try {
       objectTypes = await customFieldsApi.listObjectTypes();
