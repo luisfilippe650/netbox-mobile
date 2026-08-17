@@ -17,7 +17,7 @@ const pageShellStyles = `
 .page-shell__frame {
   width: min(100%, 480px);
   min-height: 100vh;
-  padding: 0;
+  padding: max(12px, env(safe-area-inset-top)) 0 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -79,7 +79,7 @@ const pageShellStyles = `
 
 .page-shell:not(.home-page) .page-shell__hero {
   padding: 19px 18px;
-  border-radius: 0 0 14px 14px;
+  border-radius: 14px;
 }
 
 .page-shell:not(.home-page) .page-shell__eyebrow {
@@ -96,6 +96,10 @@ const pageShellStyles = `
   margin-top: 8px;
   font-size: 0.9rem;
   line-height: 1.45;
+}
+
+.page-shell.home-page .page-shell__hero {
+  border-radius: 14px;
 }
 
 @media (max-width: 360px) {

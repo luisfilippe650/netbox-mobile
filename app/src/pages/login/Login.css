@@ -7,7 +7,7 @@
   padding: max(16px, env(safe-area-inset-top))
     max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
-  background: var(--primary-color);
+  background: var(--surface-color);
   font-family: Arial, sans-serif;
 }
 
@@ -19,8 +19,8 @@
   display: flex;
   flex-direction: column;
   border-radius: 30px;
-  background: var(--surface-color);
-  box-shadow: 0 22px 55px rgba(0, 25, 75, 0.3);
+  background: #f4f6fa;
+  box-shadow: 0 22px 55px rgba(13, 15, 26, 0.14);
 }
 
 .login-card__header {

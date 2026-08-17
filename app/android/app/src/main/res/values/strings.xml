@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Gerenciador de Datacenter</string>
+    <string name="title_activity_main">Gerenciador de Datacenter</string>
+    <string name="package_name">br.gov.inpe.netboxmobile</string>
+    <string name="custom_url_scheme">br.gov.inpe.netboxmobile</string>
+</resources>
