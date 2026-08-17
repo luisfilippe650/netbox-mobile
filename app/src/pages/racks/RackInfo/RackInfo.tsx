@@ -8,8 +8,11 @@ import {
   type PageResult,
 } from "../../../hooks/usePaginatedData";
 import type { BatchDeleteResult } from "../../../services";
-import rackIcon from "../../../assets/icons/rack_medio.png";
-import { getOccupiedUnits, type RackSummary } from "../shared/data";
+import {
+  getOccupiedUnits,
+  getRackOccupancyPercentage,
+  type RackSummary,
+} from "../shared/data";
 import "../../organization/OrganizationList/OrganizationList.css";
 import "./RackInfo.css";
 
@@ -129,6 +132,7 @@ export default function RackInfo({
       <div className="rack-list">
         {items.map((rack) => {
           const occupiedUnits = getOccupiedUnits(rack);
+          const occupancyPercentage = getRackOccupancyPercentage(rack);
           return (
             <article
               className="rack-list__card"
@@ -157,8 +161,18 @@ export default function RackInfo({
                   <span aria-hidden="true" />
                 </label>
               ) : null}
-              <span className="rack-list__icon">
-                <img src={rackIcon} alt="" />
+              <span
+                className="rack-list__occupancy"
+                role="img"
+                aria-label={`${occupancyPercentage}% do rack ocupado`}
+                style={{
+                  background: `conic-gradient(var(--primary-color) ${occupancyPercentage}%, #e8edf5 0)`,
+                }}
+              >
+                <span>
+                  <strong>{occupancyPercentage}%</strong>
+                  <small>ocupado</small>
+                </span>
               </span>
               <span className="rack-list__content">
                 <span className="rack-list__title">
@@ -168,22 +182,24 @@ export default function RackInfo({
                 <span className="rack-list__location">
                   {rack.location} · {rack.site}
                 </span>
-                {rack.devices.length > 0 ? (
-                  <span className="rack-list__usage">
-                    <span>
-                      <i
-                        style={{
-                          width: `${(occupiedUnits / rack.height) * 100}%`,
-                        }}
-                      />
-                    </span>
-                    <small>
-                      {occupiedUnits}U ocupadas de {rack.height}U
-                    </small>
+                <span className="rack-list__metadata">
+                  <small>
+                    <b>Grupo</b>
+                    {rack.group}
+                  </small>
+                  <small>
+                    <b>Função</b>
+                    {rack.role}
+                  </small>
+                </span>
+                <span className="rack-list__usage">
+                  <span>
+                    <i style={{ width: `${occupancyPercentage}%` }} />
                   </span>
-                ) : (
-                  <small>Abra o rack para consultar sua ocupação.</small>
-                )}
+                  <small>
+                    {occupiedUnits}U ocupadas de {rack.height}U
+                  </small>
+                </span>
               </span>
               <span className="rack-list__arrow" aria-hidden="true">
                 ›
