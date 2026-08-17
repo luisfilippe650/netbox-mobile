@@ -42,6 +42,7 @@ export function mapRacks(
     group: rack.group?.name ?? rack.group?.display ?? "Sem grupo",
     role: rack.role?.name ?? rack.role?.display ?? "Sem função",
     height: rack.u_height,
+    startingUnit: rack.starting_unit,
     width: rack.width,
     devices: devices
       .filter(

@@ -114,6 +114,7 @@ const pageDataKeys: Partial<Record<Page, NetBoxDataKey[]>> = {
   ],
   "add-device-type": ["manufacturers"],
   "add-rack": ["sites", "locations", "rackGroups", "rackRoles"],
+  "rack-info": ["devices", "deviceTypes"],
   sites: ["regions"],
   locations: ["sites"],
 };
@@ -285,7 +286,14 @@ export default function App() {
         );
       const rackDevices = canViewDevices
         ? (await netbox.devices.list({ rack_id: rack.apiId }))
-            .map((device) => mapDevice(device))
+            .map((device) =>
+              mapDevice(
+                device,
+                data.deviceTypes.find(
+                  (deviceType) => deviceType.id === device.device_type.id,
+                ),
+              ),
+            )
             .filter((device) => device.allocatedUnit > 0)
             .map((device) => ({
               id: device.id,

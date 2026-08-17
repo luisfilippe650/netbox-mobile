@@ -1,7 +1,7 @@
 import { PageShell } from "../../../components/PageShell/PageShell";
 import {
   getOccupiedUnits,
-  type RackDevice,
+  getPositionedRackDevices,
   type RackSummary,
 } from "../shared/data";
 import "./RackDetails.css";
@@ -11,20 +11,15 @@ type RackDetailsProps = {
   onBack: () => void;
 };
 
-function getDeviceAtUnit(devices: readonly RackDevice[], unit: number) {
-  return devices.find(
-    (device) =>
-      unit >= device.startingUnit && unit < device.startingUnit + device.height,
-  );
-}
-
 export default function RackDetails({ rack, onBack }: RackDetailsProps) {
   const occupiedUnits = getOccupiedUnits(rack);
-  const freeUnits = rack.height - occupiedUnits;
+  const freeUnits = Math.max(0, rack.height - occupiedUnits);
+  const highestUnit = rack.startingUnit + rack.height - 1;
   const units = Array.from(
     { length: rack.height },
-    (_, index) => rack.height - index,
+    (_, index) => highestUnit - index,
   );
+  const positionedDevices = getPositionedRackDevices(rack);
 
   return (
     <PageShell
@@ -87,24 +82,33 @@ export default function RackDetails({ rack, onBack }: RackDetailsProps) {
             <strong>{rack.name}</strong>
             <i />
           </div>
-          <div className="rack-elevation__body">
-            {units.map((unit) => {
-              const device = getDeviceAtUnit(rack.devices, unit);
-              const isDeviceTop =
-                device && unit === device.startingUnit + device.height - 1;
-              return (
-                <div
-                  className={`rack-elevation__unit${device ? " rack-elevation__unit--occupied" : ""}`}
-                  key={unit}
-                >
-                  <span>{unit}U</span>
-                  <div title={device?.name}>
-                    {isDeviceTop ? device.name : null}
-                  </div>
-                  <span>{unit}U</span>
-                </div>
-              );
-            })}
+          <div
+            className="rack-elevation__body"
+            style={{ gridTemplateRows: `repeat(${rack.height}, 18px)` }}
+          >
+            {units.map((unit, index) => (
+              <div className="rack-elevation__unit" key={unit}>
+                <span style={{ gridRow: index + 1 }}>{unit}U</span>
+                <div style={{ gridRow: index + 1 }} />
+                <span style={{ gridRow: index + 1 }}>{unit}U</span>
+              </div>
+            ))}
+            {positionedDevices.map((device) => (
+              <div
+                className="rack-elevation__device"
+                key={device.id}
+                style={{
+                  gridRow: `${device.row} / span ${device.visibleHeight}`,
+                }}
+                title={`${device.name}: ${device.height}U, da U${device.startingUnit} até a U${device.startingUnit + device.height - 1}`}
+              >
+                <strong>{device.name}</strong>
+                <small>
+                  {device.height}U · U{device.startingUnit}–U
+                  {device.startingUnit + device.height - 1}
+                </small>
+              </div>
+            ))}
           </div>
           <div className="rack-elevation__base">
             <i />

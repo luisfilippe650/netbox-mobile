@@ -9,6 +9,19 @@ import {
   requiredSlugSchema,
 } from "../client/client_dto";
 
+// O NetBox serializa campos com choices como { value, label } em algumas
+// versões/endpoints. A largura do rack é numericamente equivalente nos dois
+// formatos, então a camada de DTO a normaliza antes de expor o dado ao app.
+const rackWidthResponseSchema = z.union([
+  z.number().int().positive(),
+  z
+    .object({
+      value: z.number().int().positive(),
+      label: z.string(),
+    })
+    .transform(({ value }) => value),
+]);
+
 export const rackSchema = z.object({
   id: entityIdSchema,
   display: z.string(),
@@ -17,7 +30,7 @@ export const rackSchema = z.object({
   location: briefObjectSchema.nullable(),
   group: briefObjectSchema.nullable(),
   role: briefObjectSchema.nullable(),
-  width: z.number().int().positive(),
+  width: rackWidthResponseSchema,
   u_height: z.number().int().positive(),
   starting_unit: z.number().int().positive(),
   description: z.string(),

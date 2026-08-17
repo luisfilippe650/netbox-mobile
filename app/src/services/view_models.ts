@@ -55,6 +55,7 @@ export type RackSummary = {
   group: string;
   role: string;
   height: number;
+  startingUnit: number;
   width: number;
   devices: readonly {
     id: string;

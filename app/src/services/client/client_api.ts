@@ -68,6 +68,8 @@ class NetBoxApiClient {
     responseSchema?: z.ZodType<T>,
   ): Promise<T> {
     const url = resolveApiUrl(path);
+    const method = (options.method ?? "GET").toUpperCase();
+    const requestContext = `${method} ${url.pathname}${url.search}`;
     const controller = new AbortController();
     const timeout = window.setTimeout(
       () => controller.abort(),
@@ -98,12 +100,21 @@ class NetBoxApiClient {
       });
 
       const contentType = response.headers.get("content-type") ?? "";
-      const payload: unknown =
-        response.status === 204
-          ? null
-          : contentType.includes("json")
-            ? await response.json()
-            : await response.text();
+      let payload: unknown;
+      try {
+        payload =
+          response.status === 204
+            ? null
+            : contentType.includes("json")
+              ? await response.json()
+              : await response.text();
+      } catch (error) {
+        throw new NetBoxApiError(
+          `Resposta ilegível em ${requestContext} (HTTP ${response.status}): o corpo indicado como ${contentType || "tipo desconhecido"} não pôde ser interpretado.`,
+          response.status,
+          error,
+        );
+      }
 
       if (!response.ok) {
         const invalidAuthentication =
@@ -114,29 +125,30 @@ class NetBoxApiClient {
             ));
         if (invalidAuthentication && options.authenticated !== false)
           netboxSession.clear();
+        const details = apiErrorMessage(
+          payload,
+          "A API não informou detalhes adicionais.",
+        );
         throw new NetBoxApiError(
-          apiErrorMessage(
-            payload,
-            `A API respondeu com status ${response.status}.`,
-          ),
+          `Falha em ${requestContext} (HTTP ${response.status}): ${details}`,
           response.status,
           payload,
         );
       }
 
       return responseSchema
-        ? parseWithSchema(responseSchema, payload, `resposta de ${path}`)
+        ? parseWithSchema(responseSchema, payload, `resposta de ${requestContext}`)
         : (payload as T);
     } catch (error) {
       if (error instanceof NetBoxApiError) throw error;
       if (error instanceof DOMException && error.name === "AbortError") {
         throw new NetBoxApiError(
-          "A conexão com o NetBox excedeu o tempo limite.",
+          `Tempo limite em ${requestContext}: o NetBox não respondeu em ${netboxConfig.requestTimeoutMs} ms.`,
           0,
         );
       }
       throw new NetBoxApiError(
-        "Não foi possível conectar ao NetBox. Verifique o endereço da API e a rede.",
+        `Falha de conexão em ${requestContext}: não foi possível acessar ${url.origin}. Verifique a URL da API, a rede e o CORS do NetBox.`,
         0,
         error,
       );
@@ -226,7 +238,11 @@ class NetBoxApiClient {
     inputSchema: z.ZodType<TInput>,
     responseSchema: z.ZodType<TOutput>,
   ) {
-    const parsedBody = parseWithSchema(inputSchema, body, `envio para ${path}`);
+    const parsedBody = parseWithSchema(
+      inputSchema,
+      body,
+      `corpo de POST ${path}`,
+    );
     return this.request<TOutput>(
       path,
       { method: "POST", body: parsedBody },
@@ -243,7 +259,7 @@ class NetBoxApiClient {
     const parsedBody = parseWithSchema(
       inputSchema,
       body,
-      `atualização de ${path}`,
+      `corpo de PATCH ${path}`,
     );
     return this.request<TOutput>(
       path,
