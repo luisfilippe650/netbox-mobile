@@ -1,16 +1,14 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-const allowCleartext = process.env.CAPACITOR_ALLOW_CLEARTEXT === "true";
-
 const config: CapacitorConfig = {
   appId: "br.gov.inpe.netboxmobile",
   appName: "Gerenciador de Datacenter",
   webDir: "dist",
-  // HTTPS é o padrão. HTTP exige uma liberação explícita ao sincronizar um APK
-  // de desenvolvimento: CAPACITOR_ALLOW_CLEARTEXT=true npx cap sync android.
+  // A configuração empacotada é sempre segura. O source set Android de debug
+  // substitui o esquema local e a política de rede apenas em APKs debuggable.
   server: {
-    androidScheme: allowCleartext ? "http" : "https",
-    cleartext: allowCleartext,
+    androidScheme: "https",
+    cleartext: false,
   },
 };
 

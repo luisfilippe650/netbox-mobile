@@ -1,19 +1,14 @@
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { tokenSchema, type NetBoxToken } from "./client_dto";
 
-const sessionKey = "netbox-mobile.session";
+type SecureSessionPlugin = {
+  load(): Promise<{ value?: string }>;
+  save(options: { value: string }): Promise<void>;
+  clear(): Promise<void>;
+};
 
-function readStoredToken(): NetBoxToken | null {
-  try {
-    const value = sessionStorage.getItem(sessionKey);
-    if (!value) return null;
-    const result = tokenSchema.safeParse(JSON.parse(value));
-    if (!result.success) sessionStorage.removeItem(sessionKey);
-    return result.success ? result.data : null;
-  } catch {
-    sessionStorage.removeItem(sessionKey);
-    return null;
-  }
-}
+const secureSession = registerPlugin<SecureSessionPlugin>("SecureSession");
+const usesAndroidKeystore = Capacitor.getPlatform() === "android";
 
 function authorizationFor(token: NetBoxToken) {
   return token.version === 2
@@ -22,7 +17,7 @@ function authorizationFor(token: NetBoxToken) {
 }
 
 class NetBoxSession {
-  private token = readStoredToken();
+  private token: NetBoxToken | null = null;
 
   get isAuthenticated() {
     return this.token !== null;
@@ -36,14 +31,38 @@ class NetBoxSession {
     return this.token ? authorizationFor(this.token) : null;
   }
 
-  start(token: NetBoxToken) {
-    this.token = token;
-    sessionStorage.setItem(sessionKey, JSON.stringify(token));
+  async restore() {
+    this.token = null;
+    if (!usesAndroidKeystore) return;
+
+    const { value } = await secureSession.load();
+    if (!value) return;
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      await secureSession.clear();
+      return;
+    }
+    const result = tokenSchema.safeParse(parsed);
+    if (!result.success) {
+      await secureSession.clear();
+      return;
+    }
+    this.token = result.data;
   }
 
-  clear() {
+  async start(token: NetBoxToken) {
+    this.token = token;
+    if (usesAndroidKeystore) {
+      await secureSession.save({ value: JSON.stringify(token) });
+    }
+  }
+
+  async clear() {
     this.token = null;
-    sessionStorage.removeItem(sessionKey);
+    if (usesAndroidKeystore) await secureSession.clear();
   }
 }
 

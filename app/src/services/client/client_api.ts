@@ -124,7 +124,7 @@ class NetBoxApiClient {
               JSON.stringify(payload),
             ));
         if (invalidAuthentication && options.authenticated !== false)
-          netboxSession.clear();
+          await netboxSession.clear();
         const details = apiErrorMessage(
           payload,
           "A API não informou detalhes adicionais.",
@@ -158,6 +158,7 @@ class NetBoxApiClient {
   }
 
   provisionToken(credentials: LoginDto) {
+    const expires = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
     return this.request<NetBoxToken>(
       "/users/tokens/provision/",
       {
@@ -168,6 +169,7 @@ class NetBoxApiClient {
           version: 2,
           write_enabled: true,
           description: "NetBox Mobile",
+          expires,
         },
       },
       tokenSchema,

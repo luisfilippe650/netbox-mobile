@@ -28,8 +28,8 @@ class NetBoxClientService {
       "credenciais",
     );
     const token = await netboxApi.provisionToken(credentials);
-    netboxSession.start(token);
     try {
+      await netboxSession.start(token);
       return await netboxApi.checkAuthentication();
     } catch (error) {
       try {
@@ -37,7 +37,7 @@ class NetBoxClientService {
       } catch {
         // A limpeza local ainda é obrigatória se a API estiver indisponível.
       } finally {
-        netboxSession.clear();
+        await netboxSession.clear();
       }
       throw error;
     }
@@ -49,6 +49,7 @@ class NetBoxClientService {
    * propagados para não tratar falhas de rede ou servidor como logout.
    */
   async restoreSession() {
+    await netboxSession.restore();
     if (!netboxSession.isAuthenticated) return false;
     try {
       return await netboxApi.checkAuthentication();
@@ -67,13 +68,13 @@ class NetBoxClientService {
     try {
       if (tokenId) await netboxApi.delete(`/users/tokens/${tokenId}/`);
     } finally {
-      netboxSession.clear();
+      await netboxSession.clear();
     }
   }
 
   /** Limpa apenas a sessão local, sem tentar revogar o token no servidor. */
-  clearSession() {
-    netboxSession.clear();
+  async clearSession() {
+    await netboxSession.clear();
   }
 
   /** Lista e valida todos os itens paginados de um endpoint do NetBox. */

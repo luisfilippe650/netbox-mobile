@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "android:sync": "npm run build && cap sync android",
-    "android:build:debug": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "build:android:debug": "tsc -b && NODE_ENV=development vite build --mode development",
+    "android:sync:debug": "npm run build:android:debug && cap sync android",
+    "android:build:debug": "npm run android:sync:debug && cd android && ./gradlew assembleDebug",
     "lint": "oxlint",
     "test": "vitest run",
     "preview": "vite preview"

@@ -389,7 +389,7 @@ export default function App() {
     try {
       await netboxClient.logout();
     } catch {
-      netboxClient.clearSession();
+      await netboxClient.clearSession();
     }
     clearSessionAccess();
     setData(emptyData);

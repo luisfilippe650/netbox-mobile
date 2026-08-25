@@ -27,18 +27,7 @@ function parseApiUrl(value: string) {
 }
 
 const parsedApiUrl = parseApiUrl(rawApiUrl);
-const isLoopback = ["localhost", "127.0.0.1", "::1"].includes(
-  parsedApiUrl.hostname,
-);
-const explicitlyAllowsInsecureHttp =
-  import.meta.env.VITE_ALLOW_INSECURE_HTTP === "true";
-
-if (
-  parsedApiUrl.protocol !== "https:" &&
-  import.meta.env.PROD &&
-  !isLoopback &&
-  !explicitlyAllowsInsecureHttp
-) {
+if (parsedApiUrl.protocol !== "https:" && import.meta.env.PROD) {
   throw new Error(
     "A API precisa usar HTTPS em produção. Use HTTP somente em desenvolvimento controlado.",
   );
