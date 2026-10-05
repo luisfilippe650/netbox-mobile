@@ -1,0 +1,26 @@
+.add-connection__success {
+  text-align: center;
+}
+
+.add-connection__success > span {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: auto;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.add-connection__success h2,
+.add-connection__success p {
+  margin: 0;
+}
+
+.add-connection__success p {
+  color: var(--secondary-font-color);
+  line-height: 1.5;
+}

@@ -1,0 +1,63 @@
+import {
+  deviceRolesService,
+  devicesService,
+  deviceTypesService,
+  manufacturersService,
+  customFieldsService,
+} from "./devices/devices_service";
+import {
+  rackGroupsService,
+  rackRolesService,
+  racksService,
+} from "./racks/racks_service";
+import {
+  locationsService,
+  regionsService,
+  sitesService,
+} from "./sites/sites_service";
+import { connectionsService } from "./connections/connections_service";
+
+export { NetBoxApiError, netboxClient } from "./client";
+export type { AuthenticatedUser, NetBoxObjectPermission } from "./client";
+export { loadNetBoxData } from "./load-data";
+export type { NetBoxData, NetBoxDataKey } from "./load-data";
+export { deviceRoleColors } from "./devices/devices_dto";
+export {
+  mapDevice,
+  mapDeviceRoles,
+  mapManufacturers,
+} from "./devices/devices_service";
+export type * from "./devices/devices_dto";
+export { mapRackRoles, mapRacks } from "./racks/racks_service";
+export type * from "./racks/racks_dto";
+export { mapLocations, mapRegions, mapSites } from "./sites/sites_service";
+export type * from "./sites/sites_dto";
+export type * from "./view_models";
+export type * from "./connections/connections_dto";
+export type * from "./connections/connections_service";
+export * from "./connections/connection_rules";
+export { deleteResources } from "./batch-delete";
+
+export const netbox = {
+  devices: devicesService,
+  deviceTypes: deviceTypesService,
+  deviceRoles: deviceRolesService,
+  manufacturers: manufacturersService,
+  customFields: customFieldsService,
+  racks: racksService,
+  rackGroups: rackGroupsService,
+  rackRoles: rackRolesService,
+  sites: sitesService,
+  locations: locationsService,
+  regions: regionsService,
+  connections: connectionsService,
+};
+
+export function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}

@@ -1,0 +1,102 @@
+.add-connection-page .page-shell__content {
+  gap: 12px;
+}
+.add-connection__card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--surface-color);
+}
+.add-connection__card h2,
+.termination-picker h3 {
+  margin: 0;
+}
+.add-connection__card label,
+.add-connection__device-search label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.add-connection__card input,
+.add-connection__card select,
+.add-connection__card textarea,
+.add-connection__device-search input {
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  font: inherit;
+}
+.add-connection__device-search {
+  display: grid;
+  gap: 8px;
+}
+.add-connection__device-search button,
+.termination-picker button {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--neutral-background-color);
+  text-align: left;
+}
+.termination-picker {
+  display: grid;
+  gap: 12px;
+}
+.termination-picker section {
+  display: grid;
+  gap: 7px;
+}
+.termination-picker h3 {
+  font-size: 0.8rem;
+  color: var(--secondary-font-color);
+}
+.termination-picker button[aria-pressed="true"] {
+  border-color: var(--primary-color);
+  background: #E6F3F1;
+}
+.termination-picker small {
+  color: var(--secondary-font-color);
+}
+.add-connection__row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+}
+.add-connection__primary,
+.add-connection__actions button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary-color);
+  color: #fff;
+  font-weight: 800;
+}
+.add-connection__error {
+  padding: 12px;
+  border-radius: 10px;
+  background: #fee4e2;
+  color: #b42318;
+}
+.add-connection__summary aside {
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff4cc;
+  color: #6b4e00;
+}
+.add-connection__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.add-connection__actions button:first-child {
+  background: var(--neutral-background-color);
+  color: var(--font-color);
+}
