@@ -1,0 +1,10 @@
+# Configuracoes e artefatos locais de agentes de IA
+.agents/
+.agent/
+.codex/
+.claude/
+.superpowers/
+**/docs/superpowers/
+
+# Configuracoes locais do IDE na raiz do repositorio
+.idea/
