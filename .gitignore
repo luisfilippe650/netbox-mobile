@@ -8,3 +8,8 @@
 
 # Configuracoes locais do IDE na raiz do repositorio
 .idea/
+
+# Documentacao Zensical: build, cache e ambiente Python local
+/site/
+/.cache/
+/.venv-docs/

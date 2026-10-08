@@ -1,0 +1,34 @@
+[project]
+site_name = "Datacenter Manager"
+site_description = "Documentação do cliente web e Android para NetBox"
+docs_dir = "docs"
+site_dir = "site"
+dev_addr = "127.0.0.1:8001"
+repo_url = "https://github.com/luisfilippe650/netbox-mobile"
+nav = [
+    { "Português (Brasil)" = [
+        { "Início" = "index.md" },
+        { "Sobre o projeto" = "sobre.md" },
+        { "Instalação" = "instalacao.md" },
+        { "Configuração" = "configuracao.md" },
+        { "Desenvolvimento" = "desenvolvimento.md" },
+        { "Documentação" = "documentacao.md" },
+    ] },
+    { "English" = [
+        { "Home" = "en/index.md" },
+        { "About the project" = "en/about.md" },
+        { "Installation" = "en/installation.md" },
+        { "Configuration" = "en/configuration.md" },
+        { "Development" = "en/development.md" },
+        { "Documentation" = "en/documentation.md" },
+    ] },
+]
+
+[project.theme]
+language = "pt-BR"
+
+[project.extra]
+alternate = [
+    { name = "Português (Brasil)", link = "/", lang = "pt" },
+    { name = "English", link = "/en/", lang = "en" },
+]

@@ -211,6 +211,27 @@ Permissions are checked by object type and the `view`, `add`, `change` and `dele
 - `VITE_` variables are bundled into the frontend. Only configure public connection settings; enter usernames and passwords on the login screen.
 - In a browser, the token stays in memory. On Android, the session is stored using Android Keystore. Signing out attempts to revoke the NetBox token and clears the local session.
 
+## Documentation
+
+Project documentation uses [Zensical](https://zensical.org/docs/) and lives in [`docs/`](docs/index.md), in [Portuguese](docs/index.md) and [English](docs/en/index.md), with navigation configured in [`zensical.toml`](zensical.toml). Python 3.10 or later with `venv` and `pip` is required.
+
+From the repository root, in Bash/Linux/macOS:
+
+```bash
+python3 -m venv .venv-docs
+source .venv-docs/bin/activate
+python -m pip install -r requirements-docs.txt
+zensical serve
+```
+
+Open `http://127.0.0.1:8001`. On Windows, activate the environment with `.venv-docs\Scripts\activate` in Command Prompt. To generate the static site:
+
+```bash
+zensical build --strict
+```
+
+Output is written to `site/`. Edit Markdown pages in `docs/` and update navigation when adding pages. The build, cache and local Python environment are ignored by Git.
+
 ## Development and origins
 
 Developed by **[Luis Filippe Reis Nogueira](https://github.com/luisfilippe650)** as part of his internship activities at the **Divisão de Infraestrutura de Dados e Supercomputação (COIDS)** of **[INPE — Instituto Nacional de Pesquisas Espaciais](https://www.gov.br/inpe/pt-br)**, Brazil's National Institute for Space Research.

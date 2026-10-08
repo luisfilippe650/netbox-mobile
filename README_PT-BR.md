@@ -212,6 +212,27 @@ As permissões são verificadas por tipo de objeto e pelas ações `view`, `add`
 - No navegador, o token permanece em memória. No Android, a sessão é persistida de forma protegida com Android Keystore. Ao sair, o aplicativo tenta revogar o token no NetBox e limpa a sessão local.
 
 
+## Documentação
+
+A documentação do projeto usa [Zensical](https://zensical.org/docs/) e fica em [`docs/`](docs/index.md), em [português](docs/index.md) e [inglês](docs/en/index.md), com navegação definida em [`zensical.toml`](zensical.toml). Requer Python 3.10 ou superior com `venv` e `pip`.
+
+Na raiz do repositório, em Bash/Linux/macOS:
+
+```bash
+python3 -m venv .venv-docs
+source .venv-docs/bin/activate
+python -m pip install -r requirements-docs.txt
+zensical serve
+```
+
+Abra `http://127.0.0.1:8001`. No Windows, ative o ambiente com `.venv-docs\Scripts\activate` no Prompt de Comando. Para gerar o site estático:
+
+```bash
+zensical build --strict
+```
+
+O resultado fica em `site/`. Edite as páginas Markdown em `docs/` e atualize a navegação ao adicionar páginas. O build, o cache e o ambiente Python local são ignorados pelo Git.
+
 ## Desenvolvimento e origem
 
 Desenvolvido por **[Luis Filippe Reis Nogueira](https://github.com/luisfilippe650)**, no contexto de suas atividades de estágio na **Divisão de Infraestrutura de Dados e Supercomputação (COIDS)**, do **[INPE — Instituto Nacional de Pesquisas Espaciais](https://www.gov.br/inpe/pt-br)**.
